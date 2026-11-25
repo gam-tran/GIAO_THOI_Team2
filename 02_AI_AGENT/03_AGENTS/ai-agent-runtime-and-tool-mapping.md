@@ -1,6 +1,6 @@
 # AI Agent Runtime – n8n Export Findings
 
-> Nguồn: AI Assistant, Content Studio, Campaign Planner, Marketing Insights workflow exports và ảnh Agent Builder. Tài liệu mô tả những gì export thể hiện; không đồng nghĩa Skills Builder được nạp vào runtime.
+**Nguồn đối chiếu:** AI Assistant, Content Studio, Campaign Planner, Marketing Insights workflow exports và ảnh Agent Builder. Tài liệu mô tả cấu trúc thể hiện trong các nguồn này; không đồng nhất Skills trên Builder với cơ chế nạp ngữ cảnh của workflow runtime.
 
 ## 1. AI Assistant API
 
@@ -50,7 +50,7 @@ Workflow exports lại có Gemini Chat Model nodes, HTTP Request nodes, GA4 API 
 
 ## 6. Tài liệu liên quan
 
-- [Instructions Draft](../01_PROMPT_ENGINEERING/marketing-ai-agent-instructions-v1.md)
+- [Central Agent Instructions](../01_PROMPT_ENGINEERING/marketing-ai-agent-instructions-v1.md)
 - [Builder configuration evidence](./agent-builder-configuration.md)
 - [Workflow inventory](../04_WORKFLOWS/n8n-workflow-inventory.md)
 - [Integration architecture](../05_INTEGRATIONS/n8n-integration-architecture.md)
