@@ -131,3 +131,46 @@ A reference file being present in Git does not by itself prove that a runtime wo
 - [ ] Compare Agent Builder Skills/Tools and central Instructions with the runtime architecture.
 
 **Overall:** prompt extraction and static documentation are complete for these three supplied workflows. Two gaps now have explicit remediation specifications in Git, but the actual frontend/n8n implementation and end-to-end runtime tests remain outstanding.
+
+
+## Agent Builder review — screenshot and pasted Instructions (25/11/2026)
+
+### Observed configuration
+
+| Item | Observed | Confidence / limitation |
+|---|---|---|
+| Agent model | `gemini-3.1-flash-lite` | Visible in supplied screenshot |
+| Skills | Empty; UI shows `Add skill` | Visible in supplied screenshot; no Skills are currently attached in this view |
+| Trigger | `n8n Chat` | Visible in supplied screenshot |
+| Tools | `16 HTTP Request` and `Google analytics` | Visible in supplied screenshot; individual HTTP endpoints and GA4 schema were not exposed |
+| Web search | Off | Visible in supplied screenshot |
+
+### Findings in the pasted 1,927-line Instructions
+
+1. Multiple overlapping top-level identities/modules exist: Marketing Analytics Agent, Marketing Insights, Marketing Orchestration System, Content Studio, Campaign Planner, Advanced Marketing Insights, Dashboard, Analytics, Brand Library and AI Assistant.
+2. GA4 field scope conflicts. The opening section lists 3 Metrics (`activeUsers`, `sessions`, `screenPageViews`) and 2 Dimensions (`date`, `sessionDefaultChannelGroup`), while later Analytics/Dashboard sections expand to 9 Metrics and 4 Dimensions. Actual Tool schema was not supplied, so the central prompt conservatively keeps the initial 3/2 list as the documented baseline and says the live Tool schema is authoritative.
+3. Tool-calling rules conflict: one section says a combined marketing report should use GA4, Product Data and Brand Knowledge, while later sections say to call only necessary tools. Central Instructions now consistently require selective calls.
+4. Product Data and Brand Knowledge are described as tools in the pasted Instructions, but the Builder screenshot only exposes 16 HTTP Request and Google analytics. The HTTP endpoints were not inspected; do not claim those requests are Product Data or Brand Knowledge.
+5. The pasted Instructions contain detailed UI/module specifications for Dashboard, Analytics and Brand Library. These belong in module/workflow specifications, not the shared central Instructions.
+6. The Skills panel is empty, although the pasted prompt names several Skills and References. The prompt now says to use Skills only when actually attached/available and never claim to have read an unavailable Skill.
+7. The Builder screenshot confirms model selection, but does not prove runtime behavior or successful tool execution.
+
+### Central Instructions v2.0 changes
+
+- Consolidated the agent into one role and one task-routing process.
+- Removed duplicated module-level role definitions from the central prompt.
+- Unified tool-selection guidance: call only tools actually available and relevant.
+- Added an explicit guard against assuming HTTP Request endpoints are Product/Brand tools.
+- Made GA4 schema conservative pending live schema verification; no longer treats the conflicting expanded field list as confirmed.
+- Preserved FACT / CALCULATION / INSIGHT / HYPOTHESIS distinctions and anti-fabrication rules.
+- Added the Facebook single-post media constraint: multiple images in one album OR one video; never mixed image+video in one post and never auto-split into two posts.
+- Kept approval boundaries for publishing, messaging, ads, spending and external changes.
+
+### Remaining implementation and verification
+
+- [ ] Paste/review Central Instructions v2.0 in Agent Builder; no Builder changes were made by this Git commit.
+- [ ] Attach the intended Skills and verify their names/versions in Builder.
+- [ ] Inspect the 16 HTTP Request configurations and map each endpoint to its actual purpose.
+- [ ] Inspect the Google Analytics Tool schema and confirm supported Metrics, Dimensions, date behavior and Property ID.
+- [ ] Run test prompts for GA4 aggregation, unsupported metrics, missing product facts, unavailable Skills, Facebook mixed media and action-approval boundaries.
+- [ ] Run the three n8n workflow test matrices against deployed workflows.
