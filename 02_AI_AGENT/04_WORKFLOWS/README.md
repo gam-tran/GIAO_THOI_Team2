@@ -1,21 +1,20 @@
 # Workflows & Automation
 
-Tài liệu workflow n8n được lập từ 19 JSON exports do người dùng cung cấp ngày 25/11/2026.
+Thư mục này mô tả các workflow n8n của GIAO THỜI, được tổ chức theo nhóm nghiệp vụ và vai trò trong hệ thống.
 
-## Tài liệu
-- [n8n Workflow Inventory](./n8n-workflow-inventory.md): danh mục 19 workflow, 20 webhook triggers, endpoint, luồng nghiệp vụ và Data Tables.
-- [Security and Reliability Review](../05_INTEGRATIONS/n8n-security-reliability-review.md): authentication, route trùng, automation control, GA4 và scheduled publishing.
+## Tài liệu chính
+
+- [n8n Workflow Inventory](./n8n-workflow-inventory.md) – danh mục workflow, webhook trigger, endpoint, luồng nghiệp vụ và Data Tables.
+- [Security and Reliability Review](../05_INTEGRATIONS/n8n-security-reliability-review.md) – đánh giá authentication, route, quyền automation, GA4 và scheduled publishing.
 
 ## Nhóm workflow
-- AI Assistant, Content Studio, Campaign Planner, Marketing Insights.
-- Analytics API và Dashboard API.
-- Content Library, Content Approval, Content Save, Calendar.
-- Facebook Auto Posting và Facebook Scheduled Publishing.
-- Automation Center, Control, Run, Executions và Schedule Management.
 
-## Lưu ý xác minh
-- Cờ active trong JSON chỉ là trạng thái tại thời điểm export, không chứng minh trạng thái hiện tại.
-- Workflow export không thay thế execution logs hoặc kiểm thử trực tiếp.
-- 15/20 webhook trong export không khai báo authentication tại node Webhook; cần kiểm tra lớp API proxy/gateway.
-- Có hai workflow cùng khai báo POST giaothoi-content-library-save; cần xác minh và xử lý duplicate route.
-- Không commit raw export hoặc credentials trước khi rà soát thông tin nội bộ và bí mật.
+- **AI & Content:** AI Assistant, Content Studio, Campaign Planner, Marketing Insights.
+- **Analytics & Dashboard:** Analytics API và Dashboard API.
+- **Content Operations:** Content Library, Content Approval, Content Save và Calendar.
+- **Publishing:** Facebook Auto Posting và Facebook Scheduled Publishing.
+- **Automation Management:** Automation Center, Control, Run, Executions và Schedule Management.
+
+## Cách đọc cấu hình workflow
+
+Workflow inventory mô tả cấu trúc được thể hiện trong các JSON exports, bao gồm trigger, node, kết nối và endpoint. Trạng thái active trong một bản export là giá trị tại thời điểm xuất file; không đại diện cho trạng thái hiện tại của môi trường n8n. Việc xác nhận vận hành cần dựa trên cấu hình triển khai và execution tương ứng.
