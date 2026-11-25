@@ -4,7 +4,7 @@
 
 - [BuildWebsite – repository nguồn](https://github.com/hangji1997-cpu/ReportWebsiteAnalytics-Team2/tree/main/BuildWebsite)
 
-Đã đưa vào repository tổng hợp một **bản snapshot mã nguồn ban đầu** từ thư mục `BuildWebsite`, giữ nguyên cấu trúc đường dẫn tương ứng trong `BUILD_WEBSITE/`.
+Đã đưa vào repository tổng hợp một **bản snapshot mã nguồn một phần** từ thư mục `BuildWebsite`, giữ nguyên cấu trúc đường dẫn tương ứng trong `BUILD_WEBSITE/`. Đã bổ sung entry point, cấu hình, dữ liệu sản phẩm, context giỏ hàng, các trang chính, các modal mua hàng và nhiều component dùng chung.
 
 ### Những phần đã sao chép
 
