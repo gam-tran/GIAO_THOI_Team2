@@ -1,245 +1,133 @@
-# n8n Runtime Prompt Audit — Three AI Workflows
+# n8n Runtime Prompt Architecture and Review
 
-## Scope and evidence
+## 1. Phạm vi và nguồn đối chiếu
 
-This review covers the three JSON exports supplied for:
-- GIAO THỜI - AI Assistant API
-- GIAO THỜI - Campaign Planner API
-- GIAO THOI - Content Studio API
+Tài liệu phân tích tĩnh ba workflow JSON export:
 
-It is a static review of exported node parameters, code and connections. It does not verify current n8n deployment, execution history, webhook authentication, credential permissions or production behavior.
+- GIAO THỜI – AI Assistant API
+- GIAO THỜI – Campaign Planner API
+- GIAO THỜI – Content Studio API
 
-## Comparison
+Phân tích tập trung vào node parameters, Code node, kết nối dữ liệu, prompt template và cấu trúc đầu vào/đầu ra. Thông tin Agent Builder được đối chiếu riêng với ảnh giao diện và danh mục mô tả Tool do nhóm cung cấp ngày 25/11/2026.
 
-| Dimension | AI Assistant | Campaign Planner | Content Studio |
+Các nhận định về workflow phản ánh nội dung trong export tại thời điểm xuất file. Cờ `active` trong JSON không phải bằng chứng độc lập về trạng thái triển khai hiện tại hoặc kết quả thực thi thành công.
+
+## 2. So sánh ba workflow
+
+| Tiêu chí | AI Assistant | Campaign Planner | Content Studio |
 |---|---|---|---|
-| Role | GIAO THỜI Marketing Assistant | Marketing strategy and campaign planner | Marketing Content Specialist |
-| Main purpose | General Marketing/brand/content/business support | Build a complete campaign plan | Generate requested marketing content |
+| Vai trò | Trợ lý Marketing tổng quát | Chuyên gia lập kế hoạch chiến dịch | Chuyên viên sáng tạo nội dung |
+| Mục tiêu | Hỗ trợ hội thoại về Marketing, thương hiệu, nội dung và kinh doanh | Xây dựng kế hoạch Marketing có cấu trúc | Tạo nội dung theo nền tảng, định dạng, mục tiêu và giọng điệu |
 | Product source | GitHub `products.ts` | GitHub `products.ts` | GitHub `products.ts` |
-| Brand source | Product Marketing Context Markdown | Same | Same |
-| Conversation history | Last 12 valid user/assistant messages | No conversation history handling shown | No conversation history handling shown |
-| Model explicitly named | No | No | `gemini-3.1-flash-lite` |
-| Prompt construction | Code node | Code node | Code node |
+| Brand source | Product Marketing Context Markdown theo export | Cùng nguồn theo export | Cùng nguồn theo export |
+| Lịch sử hội thoại | Tối đa 12 message user/assistant hợp lệ | Không thể hiện cơ chế hội thoại | Không thể hiện cơ chế hội thoại |
+| Model ghi rõ trong export | Không có modelName tường minh | Không có modelName tường minh | `gemini-3.1-flash-lite` |
+| Prompt builder | Code node | Code node | Code node |
 | LLM input | `$json.prompt` | `$json.prompt` | `$json.prompt` |
-| Export active flag | true | true | true |
 
-## Shared architecture
+## 3. Kiến trúc prompt
 
-All three workflows fetch product data and brand context from the source repository branch `feature/ga4-ai-agent`, then inject those contents into a prompt built in a Code node. Each uses an n8n LangChain LLM chain with `promptType: define` and the generated prompt as text.
+Ba workflow có prompt riêng vì mỗi workflow phục vụ một nhiệm vụ và có cấu trúc dữ liệu khác nhau.
 
-The exports show no separate Skills-loading node, explicit conversation memory node, or agent tool-calling node in these three workflows. This statement applies only to these three exported workflows, not necessarily to other workflows or the separate Agent Builder.
+### 3.1. Central Agent Instructions
 
-## Main findings
+Lớp hướng dẫn trung tâm quản lý:
 
-### 1. The three prompts are separate execution-layer prompts
+- Danh tính và bối cảnh kinh doanh GIAO THỜI.
+- Quy tắc về dữ liệu sản phẩm, thương hiệu và tính trung thực.
+- Cách phân biệt dữ kiện, phép tính, nhận định và giả thuyết.
+- Nguyên tắc bảo mật, quyền hạn và phê duyệt của con người.
+- Phân loại yêu cầu và lựa chọn công cụ phù hợp.
+- Phong cách giao tiếp và tiêu chuẩn chất lượng đầu ra.
 
-Do not collapse them into one prompt:
-- AI Assistant is a conversational general-purpose Marketing assistant.
-- Campaign Planner is a structured planning prompt with campaign brief fields and seven required plan sections.
-- Content Studio is a content-generation prompt with platform, format, objective and tone fields.
+### 3.2. Workflow-specific prompts
 
-The central Agent Builder Instructions should define shared identity, boundaries and routing. The workflow-specific prompts should retain task-specific input fields, output structure and constraints.
+Mỗi workflow giữ lại các thành phần đặc thù:
 
-### 2. Model configuration is inconsistent or incomplete in exports
+- **AI Assistant:** lịch sử hội thoại, Product Data, Brand Knowledge và cách phản hồi yêu cầu tổng quát.
+- **Campaign Planner:** thông tin chiến dịch, kênh, ngân sách, timeline, KPI và cấu trúc kế hoạch.
+- **Content Studio:** sản phẩm, nền tảng, loại nội dung, mục tiêu, giọng điệu và brief.
 
-- Content Studio explicitly names `models/gemini-3.1-flash-lite`.
-- AI Assistant and Campaign Planner model nodes show empty `options` and no explicit `modelName`.
-- Do not claim all three use the same explicit model based only on these JSON files. Inspect the deployed n8n node configuration/credentials or execute a test to confirm.
+Không gộp toàn bộ logic nghiệp vụ vào một prompt duy nhất vì sẽ làm mờ trách nhiệm của từng workflow và tăng nguy cơ áp dụng nhầm quy tắc.
 
-### 3. Input validation differs
+## 4. Findings từ workflow exports
 
-- AI Assistant validates that messages is a non-empty array and retains only valid user/assistant messages, capped at 12.
-- Content Studio applies defaults for product, platform, content type, objective and tone.
-- Campaign Planner directly interpolates fields and calls `request.channels.join(', ')`; missing or non-array `channels` can throw. Required fields are not validated in the shown prompt builder.
+### 4.1. Nguồn Product Data và Brand Knowledge
 
-### 4. Product and brand data are dynamically fetched
+Ba workflow lấy nội dung nguồn từ repository website `gam-tran/giao-thoi-website-v3`, branch `feature/ga4-ai-agent`, rồi đưa vào prompt qua Code node.
 
-The prompts do not contain a frozen product catalog or fixed Brand Knowledge. They fetch source files at runtime from GitHub raw URLs. Therefore the exact prompt context depends on the version/content available at execution time. The exported JSON does not snapshot the fetched source contents.
+Cách tiếp cận này giúp prompt sử dụng dữ liệu nguồn thay vì nhúng cố định toàn bộ catalogue vào Instructions. Tuy nhiên, nội dung được tải phụ thuộc phiên bản file tại thời điểm request; workflow export không đóng gói snapshot của các file nguồn.
 
-### 5. Important brand guardrails already present
+Các prompt cần giữ nguyên nguyên tắc: chỉ khẳng định thông tin sản phẩm có trong nguồn, không tự tạo giá, chất liệu, xuất xứ, công dụng, đánh giá hoặc chính sách.
 
-Across the workflows:
-- GIAO THỜI is described as a distributor, not a manufacturer.
-- Product facts must not be invented.
-- Missing information should be stated or treated as an assumption.
-- Campaign KPIs should not be presented as actual results without evidence.
-- Content Studio prohibits unsupported claims about product attributes, price, reviews and customer policies.
+### 4.2. AI Assistant
 
-### 6. Operational constraints need to be aligned
+Workflow ID: `R8WodfzrnKEdNdst`.
 
-The current Content Studio prompt does not include the Facebook media constraint that a single post cannot contain both images and video. If this remains a product requirement, add it to the central shared rules and the Content Studio-specific prompt, and enforce it in UI/workflow validation. Do not silently split a mixed-media request into two posts.
+Node `Prepare Assistant Context` yêu cầu `messages` là mảng không rỗng, chỉ giữ role `user` hoặc `assistant`, content dạng chuỗi không rỗng và giới hạn 12 message gần nhất. Node `Build Assistant Prompt` ghép Product Data, Brand Knowledge và conversation thành prompt gửi tới Gemini Chat Model.
 
-## Recommended prompt architecture
+Export không thể hiện node memory riêng, Skill loader, vector store hoặc tool-calling agent node trong workflow này. Vì vậy, không mô tả workflow này có persistent memory hoặc tự động nạp toàn bộ Skills của Agent Builder.
 
-### Layer A — Central Agent Instructions
+### 4.3. Campaign Planner
 
-Own:
-- Agent identity and business context.
-- Shared brand facts and non-negotiable guardrails.
-- Truthfulness, evidence and uncertainty rules.
-- Permission boundaries and human approval.
-- Task classification and routing to the correct workflow/skill.
-- Shared writing and communication style.
+Workflow ID: `ZAz7EqRdeQJAKDtP`.
 
-### Layer B — Workflow-specific prompts
+Đầu vào gồm `campaignName`, `product`, `objective`, `targetAudience`, `duration`, `budget`, `channels` và `brief`. Đầu ra được tổ chức thành Campaign Overview, Campaign Strategy, Channel Plan, Budget Plan, Timeline, KPI Plan và Resource and Risk.
 
-Own:
-- Workflow role and task objective.
-- Input variable mapping and defaults.
-- Required output sections/schema.
-- Task-specific rules (e.g. channel restriction, budget arithmetic, product lookup).
-- Error and missing-input handling.
+Code builder gọi `request.channels.join(', ')` mà không kiểm tra trước kiểu dữ liệu. Nếu `channels` bị thiếu hoặc không phải mảng, prompt có thể lỗi trước khi gọi model. Các trường chiến dịch khác cũng được nội suy trực tiếp mà không có lớp kiểm tra đầy đủ trường bắt buộc.
 
-### Layer C — Skills and reference documents
+Quy tắc nghiệp vụ trong prompt yêu cầu không tự thêm kênh, tổng ngân sách phân bổ phải khớp ngân sách đầu vào và KPI không có dữ liệu lịch sử phải được ghi là mục tiêu đề xuất. Những quy tắc này cần đi cùng kiểm tra schema ở lớp nhận request; chỉ dẫn bằng ngôn ngữ tự nhiên không thể ngăn lỗi JavaScript trong Code node.
 
-Own reusable, detailed domain methods:
-- Content strategy, social content, copywriting, marketing ideas, campaign planning, analytics tracking.
-- Product Marketing Context and verified product information.
+### 4.4. Content Studio
 
-A reference file being present in Git does not by itself prove that a runtime workflow or Agent Builder has loaded it.
+Workflow ID: `SfgClDsh7BblZHzL`.
 
-## Recommended test matrix
+Đầu vào gồm `product`, `platform`, `contentType`, `objective`, `tone` và `brief`. Code node có giá trị mặc định cho các trường chính. Model được ghi rõ trong export là `models/gemini-3.1-flash-lite`.
 
-| Test ID | Workflow | Test | Expected behavior |
-|---|---|---|---|
-| PA-01 | AI Assistant | Ask for unsupported product price | State price is not available; do not invent |
-| PA-02 | AI Assistant | Send more than 12 conversation messages | Use only the last 12 valid messages |
-| PA-03 | AI Assistant | Include invalid roles/empty content | Ignore invalid entries; fail clearly if none remain |
-| CP-01 | Campaign Planner | Omit channels | Return `INVALID_CAMPAIGN_INPUT` with a clear validation error; do not crash unexpectedly |
-| CP-06 | Campaign Planner | `channels` is a string/null/contains non-string items | Return a clear validation error before prompt construction |
-| CP-02 | Campaign Planner | Provide budget and several channels | Allocation sums exactly to provided budget |
-| CP-03 | Campaign Planner | Provide selected channels | Do not add channels not selected |
-| CP-04 | Campaign Planner | No historical performance data | Label KPI values as proposed targets, not actual results |
-| CS-01 | Content Studio | Request product absent from product source | Explain no matching product was found; do not fabricate |
-| CS-02 | Content Studio | Omit optional request fields | Apply documented defaults |
-| CS-03 | Content Studio | Ask for unsupported delivery/warranty policy | Ask for confirmation or state source does not provide it |
-| CS-04 | Content Studio | Request both image and video in one Facebook post | Reject mixed format, explain constraint, do not split into two posts |
-| CS-05 | Content Studio | Empty/unavailable product source | Do not write factual product claims from missing source data |
+Prompt yêu cầu tra cứu sản phẩm trong nguồn trước khi viết, không bịa thông tin và định vị GIAO THỜI là đơn vị phân phối. Quy tắc media Facebook được chuẩn hóa: một bài có thể chứa album ảnh hoặc một video riêng; không kết hợp ảnh và video trong cùng bài. Khi brief yêu cầu cả hai định dạng, cần hỏi người dùng chọn một, không tự tách thành hai bài.
 
-## Completion status
+Quy tắc media là chỉ dẫn trong prompt. Việc chặn payload không hợp lệ trước upload hoặc publish cần được thực hiện ở lớp giao diện/workflow tương ứng.
 
-- [x] Three supplied workflow exports inspected.
-- [x] Runtime prompt templates transcribed into separate documents.
-- [x] Input variables, defaults and source mappings documented.
-- [x] Static cross-workflow comparison and issue list created.
-- [x] Document Facebook mixed-media rule in Content Studio runtime prompt.
-- [x] Document Campaign Planner input-validation patch and expected error contract.
-- [ ] Implement the validation and media guardrails in the deployed frontend/n8n workflows.
-- [ ] Compare with currently deployed n8n workflow configuration.
-- [ ] Confirm exact model selection for AI Assistant and Campaign Planner.
-- [ ] Execute test matrix against deployed workflows.
-- [ ] Compare Agent Builder Skills/Tools and central Instructions with the runtime architecture.
+## 5. Model configuration
 
-**Overall:** prompt extraction and static documentation are complete for these three supplied workflows. Two gaps now have explicit remediation specifications in Git, but the actual frontend/n8n implementation and end-to-end runtime tests remain outstanding.
+Content Studio export ghi rõ model `gemini-3.1-flash-lite`. Hai workflow AI Assistant và Campaign Planner có node Google Gemini Chat Model nhưng export không ghi rõ `modelName` trong phần options.
 
+Do đó, không kết luận cả ba workflow dùng cùng một model/version chỉ dựa trên các JSON exports. Model selector của Agent Builder cũng là cấu hình riêng, không thay thế bằng chứng về model được chọn trong từng Gemini node của n8n.
 
-## Agent Builder review — screenshot and pasted Instructions (25/11/2026)
+## 6. Agent Builder và 16 HTTP Request tools
 
-### Observed configuration
+Ảnh Builder ngày 25/11/2026 thể hiện model selector `gemini-3.1-flash-lite`, trigger `n8n Chat`, 16 HTTP Request tools, Google Analytics capability và Web search Off. Khu vực Skills không hiển thị Skill đã gắn trong ảnh.
 
-| Item | Observed | Confidence / limitation |
-|---|---|---|
-| Agent model | `gemini-3.1-flash-lite` | Visible in supplied screenshot |
-| Skills | Empty; UI shows `Add skill` | Visible in supplied screenshot; no Skills are currently attached in this view |
-| Trigger | `n8n Chat` | Visible in supplied screenshot |
-| Tools | `16 HTTP Request` and `Google analytics` | Visible in supplied screenshot; individual HTTP endpoints and GA4 schema were not exposed |
-| Web search | Off | Visible in supplied screenshot |
+Danh mục 16 HTTP Request được đối chiếu từ mô tả cấu hình:
 
-### Findings in the pasted 1,927-line Instructions
+| Nhóm | Số lượng | Nội dung |
+|---|---:|---|
+| Product Catalogue | 1 | GitHub raw product source |
+| GA4 Report | 1 | GA4 Data API runReport cho Property 557199346 |
+| Brand Knowledge | 1 | GitHub raw brand knowledge |
+| Skill fetchers | 5 | Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning |
+| Reference fetchers | 8 | Social Content (3), Copywriting (2), Analytics Tracking (3) |
+| **Tổng** | **16** | |
 
-1. Multiple overlapping top-level identities/modules exist: Marketing Analytics Agent, Marketing Insights, Marketing Orchestration System, Content Studio, Campaign Planner, Advanced Marketing Insights, Dashboard, Analytics, Brand Library and AI Assistant.
-2. GA4 field scope conflicts. The opening section lists 3 Metrics (`activeUsers`, `sessions`, `screenPageViews`) and 2 Dimensions (`date`, `sessionDefaultChannelGroup`), while later Analytics/Dashboard sections expand to 9 Metrics and 4 Dimensions. Actual Tool schema was not supplied, so the central prompt conservatively keeps the initial 3/2 list as the documented baseline and says the live Tool schema is authoritative.
-3. Tool-calling rules conflict: one section says a combined marketing report should use GA4, Product Data and Brand Knowledge, while later sections say to call only necessary tools. Central Instructions now consistently require selective calls.
-4. Product Data and Brand Knowledge are described as tools in the pasted Instructions, but the Builder screenshot only exposes 16 HTTP Request and Google analytics. The HTTP endpoints were not inspected; do not claim those requests are Product Data or Brand Knowledge.
-5. The pasted Instructions contain detailed UI/module specifications for Dashboard, Analytics and Brand Library. These belong in module/workflow specifications, not the shared central Instructions.
-6. The Skills panel is empty, although the pasted prompt names several Skills and References. The prompt now says to use Skills only when actually attached/available and never claim to have read an unavailable Skill.
-7. The Builder screenshot confirms model selection, but does not prove runtime behavior or successful tool execution.
+GA4 Request Body Builder được mô tả như logic chuẩn bị JSON body, không được tính thành HTTP Request thứ 17. Marketing Ideas Skill và Product Marketing Context có file trong Git nhưng không nằm trong danh sách fetch endpoint được ghi nhận.
 
-### Central Instructions v2.0 changes
+HTTP Request fetcher là cơ chế truy xuất nội dung qua endpoint; nó không đồng nghĩa với native Skill attachment trong Builder. Việc một endpoint được khai báo cũng không tự chứng minh response đã được truyền vào model context.
 
-- Consolidated the agent into one role and one task-routing process.
-- Removed duplicated module-level role definitions from the central prompt.
-- Unified tool-selection guidance: call only tools actually available and relevant.
-- Added an explicit guard against assuming HTTP Request endpoints are Product/Brand tools.
-- Made GA4 schema conservative pending live schema verification; no longer treats the conflicting expanded field list as confirmed.
-- Preserved FACT / CALCULATION / INSIGHT / HYPOTHESIS distinctions and anti-fabrication rules.
-- Added the Facebook single-post media constraint: multiple images in one album OR one video; never mixed image+video in one post and never auto-split into two posts.
-- Kept approval boundaries for publishing, messaging, ads, spending and external changes.
+## 7. Nguyên tắc thiết kế và kiểm soát
 
-### Remaining implementation and verification
+| Chủ đề | Nguyên tắc |
+|---|---|
+| Phân tầng prompt | Central Instructions quản lý quy tắc chung; workflow prompt quản lý nhiệm vụ cụ thể |
+| Tool routing | Chỉ gọi công cụ cần thiết cho yêu cầu và khả dụng trong phiên |
+| Source of truth | Dùng Product Catalogue và Brand Knowledge có nguồn; không tự điền dữ kiện thiếu |
+| GA4 | Chỉ sử dụng Metrics/Dimensions hợp lệ theo GA4 Data API và tổ hợp truy vấn được hỗ trợ |
+| Input validation | Kiểm tra trường bắt buộc, kiểu dữ liệu, mảng channels và ngân sách trước khi dựng prompt |
+| Facebook media | Một bài là album ảnh hoặc một video; mixed media cần người dùng chọn định dạng |
+| External actions | Đăng bài, gửi thông điệp, chi tiêu quảng cáo và thay đổi hệ thống phải có quyền và phê duyệt phù hợp |
+| Evidence | Phân biệt cấu hình, nội dung response và execution thực tế |
 
-- [ ] Paste/review Central Instructions v2.0 in Agent Builder; no Builder changes were made by this Git commit.
-- [ ] Attach the intended Skills and verify their names/versions in Builder.
-- [ ] Inspect the 16 HTTP Request configurations and map each endpoint to its actual purpose.
-- [ ] Inspect the Google Analytics Tool schema and confirm supported Metrics, Dimensions, date behavior and Property ID.
-- [ ] Run test prompts for GA4 aggregation, unsupported metrics, missing product facts, unavailable Skills, Facebook mixed media and action-approval boundaries.
-- [ ] Run the three n8n workflow test matrices against deployed workflows.
+## 8. Kết luận
 
+Ba workflow có phạm vi nhiệm vụ khác nhau và nên tiếp tục sử dụng prompt chuyên biệt, đặt dưới một lớp quy tắc trung tâm thống nhất. Các điểm quan trọng về chất lượng nằm ở tính chính xác của nguồn dữ liệu, kiểm tra đầu vào trước prompt builder, sự nhất quán giữa Builder và n8n runtime, cùng cơ chế kiểm soát các hành động có tác động bên ngoài.
 
-## Detailed Builder Tool configuration supplied by user (25/11/2026)
-
-The user supplied endpoint descriptions and HTTP method/configuration for the following Tools. This is configuration evidence, not successful execution evidence.
-
-| Tool purpose | Method / endpoint | Authentication | Notes |
-|---|---|---|---|
-| Product catalogue | GET `raw.githubusercontent.com/.../src/data/products.ts` on `feature/ga4-ai-agent` | None | Declared to return product source code; inspect actual returned data before making product claims |
-| GA4 report | POST `analyticsdata.googleapis.com/v1beta/properties/557199346:runReport` | OAuth2 API credential “GA4 Data API” | Property ID fixed as 557199346 |
-| GA4 request body builder | Description supplied; exact endpoint/tool name not supplied | Not specified | Constructs dateRanges, metrics, dimensions and dimensionFilter request body |
-| Brand Knowledge Base | GET `raw.githubusercontent.com/.../docs/brand-knowledge.md` on `feature/ga4-ai-agent` | None | Declared source for brand positioning, audience, identity, tone and marketing direction |
-| Content Strategy Skill fetcher | GET GitHub `.../skills/content-strategy/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
-| Social Content Skill fetcher | GET GitHub `.../skills/social-content/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
-| Copywriting Skill fetcher | GET GitHub `.../skills/copywriting/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
-| Analytics Tracking Skill fetcher | GET GitHub `.../skills/analytics-tracking/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
-
-### Interpretation and gaps
-
-- The Builder screenshot shows the native Skills panel empty. Four Skill documents are nevertheless retrievable through separate HTTP Request tools. These are two different mechanisms and must not be conflated.
-- The user-provided list does not show a Campaign Planning Skill fetcher, Marketing Ideas Skill fetcher, or reference-document fetchers. Do not assume those endpoints exist based on repository files alone.
-- The GA4 tool description lists a core set of 3 metrics/2 dimensions and also suggests an expanded set. The expanded fields must be validated against the GA4 Data API metadata/schema and valid combinations before use; descriptions alone do not prove every combination is supported.
-- The GA4 request-body builder description and the GA4 report endpoint are separate responsibilities: one prepares the body; the other executes the report. Confirm the actual tool wiring so the generated body is passed to the POST request.
-- Product and Brand GET endpoints have no authentication in the supplied configuration. Confirm that their raw GitHub URLs remain publicly accessible and that the expected source paths/branch are correct.
-- The supplied excerpts do not reveal tool names, node ordering, response transformations, error handling, or whether “Require approval” is enabled. Do not infer these settings.
-- The total count of 16 HTTP Request tools is not fully inventoried by the excerpts in this message; this table records only the tools whose descriptions/configurations were supplied.
-
-### Next verification items
-
-- [ ] Obtain remaining HTTP Request descriptions/configurations to map all 16 tools.
-- [ ] Confirm GA4 metadata support and test representative metric/dimension combinations.
-- [ ] Confirm request-body builder output is wired to the GA4 POST body.
-- [ ] Execute Product Catalogue and Brand Knowledge GET requests and inspect response shape.
-- [ ] Execute each of the four Skill fetchers and confirm the returned Markdown is passed into the agent context.
-- [ ] Confirm approval settings for each tool and test approval behavior.
-
-
-## Additional Builder Tool configuration supplied by user (25/11/2026)
-
-The user subsequently supplied the following HTTP GET Skill and Reference fetchers. All are unauthenticated raw GitHub reads from source repository `gam-tran/giao-thoi-website-v3`, branch `feature/ga4-ai-agent`. This confirms configured descriptions/endpoints as supplied, not successful runtime execution.
-
-| Type | Resource | Source path | Intended use |
-|---|---|---|---|
-| Skill | Campaign Planning | `docs/docs/marketing-skills/skills/campaign-planning/SKILL.md` | End-to-end campaign planning; objectives, audience, insight, message, channels, content, schedule, budget, KPI; distinguish facts from assumptions; no autonomous publishing/messaging/ads |
-| Reference | Social platforms | `docs/docs/marketing-skills/skills/social-content/references/platforms.md` | Select platform, format and channel-specific execution |
-| Reference | Social post templates | `docs/docs/marketing-skills/skills/social-content/references/post-templates.md` | Post, carousel, video script, tutorial and hook structures |
-| Reference | Social reverse engineering | `docs/docs/marketing-skills/skills/social-content/references/reverse-engineering.md` | Analyze benchmark content; separate observations from causal hypotheses |
-| Reference | Copywriting frameworks | `docs/docs/marketing-skills/skills/copywriting/references/copy-frameworks.md` | Select copywriting structure by objective and customer journey |
-| Reference | Natural transitions | `docs/docs/marketing-skills/skills/copywriting/references/natural-transitions.md` | Improve flow and transitions without mechanical connectors |
-| Reference | Analytics event library | `docs/docs/marketing-skills/skills/analytics-tracking/references/event-library.md` | GA4 events and parameters; distinguish proposed from implemented tracking |
-| Reference | GA4 implementation | `docs/docs/marketing-skills/skills/analytics-tracking/references/ga4-implementation.md` | GA4 configuration, measurement and troubleshooting guidance |
-| Reference | GTM implementation | `docs/docs/marketing-skills/skills/analytics-tracking/references/gtm-implementation.md` | Tags, triggers, variables and Data Layer guidance |
-
-### Updated inventory interpretation
-
-- Confirmed from user-supplied descriptions: exactly 16 HTTP request endpoints are accounted for — 1 Product Catalogue, 1 GA4 report, 1 Brand Knowledge, 5 Skill fetchers (Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning), and 8 Reference fetchers. This reconciles with the Builder screenshot showing 16 HTTP Request tools.
-- The separate GA4 Request Body Builder description specifies how the JSON body should be composed; the supplied information does not establish whether this is a separate HTTP Request node or an instruction/description associated with the GA4 tool. It is therefore documented as GA4 query-construction logic, not counted as a seventeenth HTTP Request.
-- The functional inventory now accounts for all 16 HTTP Request tools based on the user's supplied descriptions. Exact UI tool names, node wiring, response mapping, and successful execution results are still unverified.
-- Marketing Ideas Skill and Product Marketing Context remain unconfirmed as Builder HTTP fetchers. Repository presence alone is not proof of a connected endpoint.
-- References should be fetched selectively when their subject is relevant, not all on every user request.
-- Campaign Planning Skill instructions explicitly prohibit autonomous publishing, customer messaging, or ad execution; this is consistent with the central approval boundary.
-
-### Updated next verification items
-
-- [x] Reconcile the supplied endpoint descriptions against the UI count of 16 HTTP Request tools.
-- [ ] Verify all listed raw GitHub GET endpoints return the expected Markdown/source content.
-- [ ] Confirm each Skill/Reference response is actually made available to the model after the HTTP Request runs.
-- [ ] Verify whether approval is enabled per tool; supplied excerpts show the “Require approval” option but do not establish its current checked state.
-- [ ] Test selective Reference routing and confirm the agent does not fetch unrelated references.
+Tài liệu này là phân tích tĩnh từ workflow exports và cấu hình Builder được cung cấp. Kết luận về runtime, quyền credentials, trạng thái endpoint và hiệu quả thực thi cần được đối chiếu bằng cấu hình triển khai và execution tương ứng.
