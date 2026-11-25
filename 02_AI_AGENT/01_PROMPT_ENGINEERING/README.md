@@ -6,7 +6,7 @@ Thư mục này lưu prompt theo từng lớp thực thi của GIAO THỜI AI, g
 
 | Tài liệu | Nội dung | Trạng thái |
 |---|---|---|
-| [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md) | Bản Instructions chuẩn hóa đề xuất cho GIAO THỜI – Marketing AI Agent | Draft – cần đối chiếu Builder và kiểm thử |
+| [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md) | Central Instructions v2.0, đã chuẩn hóa theo ảnh Builder và nội dung Instructions người dùng gửi | Builder-aligned draft – chưa dán lại vào Builder hoặc kiểm thử runtime |
 
 ## 2. n8n runtime prompts — trích xuất từ workflow exports
 
@@ -38,7 +38,7 @@ Không gộp toàn bộ prompt tác vụ vào Central Instructions nếu điều
 
 - Cấu hình đang triển khai thực tế trên n8n và execution logs.
 - Model/version thực tế của AI Assistant và Campaign Planner (JSON export không khai báo rõ modelName).
-- Skills/Tools đang được gắn thực tế trong Agent Builder và cách chúng liên hệ với các workflow n8n.
+- Xác minh endpoint/schema của 16 HTTP Request và phạm vi truy vấn thực tế của Google Analytics Tool.
 - Kiểm thử end-to-end theo test matrix trong `n8n-runtime-prompt-audit.md`.
 - Triển khai và kiểm thử deterministic validation cho Facebook mixed-media ở frontend/workflow (prompt guardrail đã được ghi nhận).
 - Áp dụng input validation cho Campaign Planner Code node theo patch đề xuất (chưa deploy).
