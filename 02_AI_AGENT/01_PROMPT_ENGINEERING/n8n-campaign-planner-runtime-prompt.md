@@ -152,4 +152,44 @@ Marketing thực tế sau khi người phụ trách xem xét.
 
 ## Status
 
-**Source-extracted / static review completed.** Not runtime-tested. Validate input schema, missing fields, channel array handling, budget arithmetic and response quality with real executions.
+**Source-extracted; validation hardening documented.** The Code node patch below is a recommendation and has not been deployed. Validate the actual input schema, missing fields, channel array handling, budget arithmetic and response quality with real executions.
+
+
+## Input validation hardening — recommended Code node change
+
+The exported prompt builder calls `request.channels.join(', ')` without checking the value. Keep validation in the Code node before prompt interpolation; a prompt instruction cannot prevent a JavaScript exception that occurs before the LLM call.
+
+Recommended validation pattern (adapt the field requirements to the frontend contract before deployment):
+
+```javascript
+const request = $json.body ?? $json;
+const errors = [];
+
+const requiredText = [
+  'campaignName', 'product', 'objective', 'targetAudience', 'duration'
+];
+for (const field of requiredText) {
+  if (typeof request[field] !== 'string' || !request[field].trim()) {
+    errors.push(field);
+  }
+}
+
+if (!Array.isArray(request.channels) || request.channels.length === 0 ||
+    !request.channels.every(channel => typeof channel === 'string' && channel.trim())) {
+  errors.push('channels (must be a non-empty array of non-empty strings)');
+}
+
+if (request.budget !== undefined && request.budget !== null && request.budget !== '') {
+  const budget = Number(request.budget);
+  if (!Number.isFinite(budget) || budget < 0) errors.push('budget (must be a non-negative number)');
+}
+
+if (errors.length) {
+  return [{ json: { success: false, code: 'INVALID_CAMPAIGN_INPUT', message: 'Thiếu hoặc sai dữ liệu: ' + errors.join(', '), errors } }];
+}
+
+const channelsText = request.channels.map(channel => channel.trim()).join(', ');
+// Use channelsText when building the campaign prompt.
+```
+
+**Deployment note:** this is a recommended code patch for the n8n Code node, not a change to the live workflow. Confirm the actual webhook payload shape and downstream response contract, then implement and test in n8n before marking it deployed.
