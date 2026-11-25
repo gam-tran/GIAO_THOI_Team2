@@ -52,8 +52,6 @@ Tạo nội dung marketing theo yêu cầu của người dùng.
 - Viết gần gũi, tự nhiên, dễ hiểu, tránh hoa mỹ và sáo rỗng.
 - Ưu tiên lợi ích và tình huống sử dụng thực tế.
 - Nội dung phải phù hợp với nền tảng và mục tiêu đã yêu cầu.
-- Riêng bài đăng Facebook: một bài chỉ được dùng nhiều ảnh trong cùng một album hoặc một video riêng; không kết hợp ảnh và video trong cùng một bài.
-- Nếu brief yêu cầu cả ảnh và video cho một bài Facebook, phải báo rõ giới hạn và yêu cầu người dùng chọn một định dạng. Không tự tách thành hai bài đăng.
 - Nếu là bài đăng mạng xã hội, có thể dùng emoji phù hợp.
 - Không tự khẳng định chính sách giao hàng, đổi trả hoặc bảo hành khi chưa có dữ liệu.
 
@@ -82,11 +80,11 @@ Tạo nội dung marketing theo yêu cầu của người dùng.
 - The prompt instructs the model to search for the requested product in the provided product source before writing.
 - It prohibits unsupported claims about origin, material, uses, prices, reviews, figures, shipping, returns and warranty.
 - It frames GIAO THỜI as distributor, not manufacturer or craftsperson.
-- The prompt now documents the Facebook mixed-media constraint: one post may contain an image album or one video, but not both. The model must not silently split a mixed request into two posts.
-- This is a prompt-level guardrail in the documentation. The frontend/workflow still needs deterministic validation before media upload or publishing; this repository update does not deploy that code.
+- The extracted Content Studio prompt does not contain an explicit Facebook mixed-media rule. The shared Central Agent Instructions define the policy: one Facebook post uses an image album or one video, and a mixed request requires the user to choose one format.
+- The media policy is a content rule. Deterministic validation before media upload or publishing belongs in the corresponding frontend/workflow layer.
 - No explicit memory or Skills loader is shown in this export.
 - Source extraction can return an empty string when the expected fields are absent; there is no explicit stop/error for empty product or brand context in the shown code.
 
-## Status
+## Scope of findings
 
-**Source-extracted, prompt guardrail documented.** Not runtime-tested or deployed. Test product matching, unsupported product names, platform-specific formatting, missing source data, and mixed image/video requests.
+This document transcribes the prompt and input handling visible in the supplied Content Studio export. The model name is explicit in that export. Runtime behavior remains dependent on the deployed workflow, source responses and connected credentials.
