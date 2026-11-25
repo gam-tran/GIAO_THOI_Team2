@@ -33,9 +33,14 @@ Admin
 - Header chuyển tiếp: `X-GIAO-THOI-KEY`, lấy từ `N8N_WEBHOOK_KEY`.
 - Webhook path: `/webhook/giaothoi-ai-assistant`.
 
+### Agent Builder configuration
+
+- [Agent Builder Configuration](./agent-builder-configuration.md): ghi nhận model, Tools, Skills, Trigger và trạng thái Web search nhìn thấy trong ảnh chụp màn hình do người dùng cung cấp.
+- [Marketing AI Agent Instructions (Draft)](../01_PROMPT_ENGINEERING/marketing-ai-agent-instructions-v1.md): bản prompt chuẩn hóa đề xuất, chưa được xác nhận là cấu hình production.
+
 ### Những gì chưa xác minh
 
-Chưa có workflow export n8n nên chưa kết luận được model, system prompt, memory, tools, cách chọn Skill, nguồn dữ liệu được Agent truy cập và cơ chế kiểm soát hành động.
+Chưa có workflow export n8n hoặc bản export cấu hình Agent Builder nên chưa kết luận được model/runtime cuối cùng, system prompt đang hoạt động, memory, cấu hình chi tiết của Tools, cách nạp Skill và nguồn dữ liệu Agent thực sự truy cập.
 
 ### Tài liệu liên quan
 
