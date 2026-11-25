@@ -1,4 +1,4 @@
-import { authenticateRequest, jsonResponse, proxyToN8n, type AppRole } from './_lib/auth';
+import { authenticateRequest, jsonResponse, proxyToN8n, type AppRole } from '../lib/auth';
 
 const webhooks: Record<string, { method: string; path: string }> = {
   'giaothoi-dashboard': { method: 'GET', path: '/webhook/giaothoi-dashboard' },
