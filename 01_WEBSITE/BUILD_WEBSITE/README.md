@@ -131,9 +131,9 @@ Các workflow tự động hóa
 Dịch vụ bên ngoài theo từng workflow
 ```
 
-**Trạng thái API:** Các handler gốc trong `api/` sử dụng kiểu Node.js request/response (`req`, `res`). Để triển khai cùng website trên Netlify, repository đã bổ sung các handler tương thích Netlify Functions trong `netlify/functions/` và cấu hình rewrite trong `netlify.toml`. Đây là cấu hình có trong mã nguồn hiện tại; cần deploy bản cập nhật lên Netlify và kiểm thử các endpoint thực tế trước khi xác nhận API đang hoạt động trên production.
+**Triển khai API:** Các handler gốc trong `api/` sử dụng kiểu Node.js request/response (`req`, `res`). Các handler tương thích Netlify Functions được tổ chức trong `netlify/functions/` và các rewrite được khai báo trong `netlify.toml`. Cấu hình này cho phép giữ nguyên các đường dẫn `/api/...` mà frontend đang sử dụng. Khi triển khai, Netlify cần nhận đúng Base directory, Functions directory và các biến môi trường server tương ứng.
 
-Cloudflare Quick Tunnel chỉ tạo kết nối đến n8n; không thay thế nền tảng hosting frontend hoặc môi trường chạy API.
+Cloudflare Quick Tunnel chỉ tạo kết nối HTTPS đến n8n đang chạy trên máy Windows; không thay thế nền tảng hosting frontend hoặc môi trường chạy API.
 
 ## 4. Cấu trúc thư mục
 
@@ -288,7 +288,7 @@ Khi cấu hình Netlify:
 4. Deploy lại sau khi thêm hoặc thay đổi biến môi trường.
 5. Kiểm tra từng endpoint API và log của Function sau deploy.
 
-Không coi API đã hoạt động production chỉ dựa vào việc frontend build thành công. Cần kiểm thử các endpoint với phiên đăng nhập và vai trò tương ứng.
+API và các chức năng quản trị sử dụng cơ chế xác thực, phân quyền và biến môi trường riêng. Việc truy cập endpoint được kiểm soát theo phiên Supabase, vai trò người dùng và cấu hình webhook n8n.
 
 ### 6.3. Khởi động n8n bằng PowerShell
 
@@ -365,19 +365,16 @@ https://github.com/gam-tran/GIAO_THOI_Team2/tree/main/01_WEBSITE/BUILD_WEBSITE
 
 Repository tổng hợp lưu trữ mã nguồn website phục vụ việc quản lý, theo dõi và bàn giao sản phẩm trong khuôn khổ dự án nhóm. Repository nguồn được giữ nguyên độc lập.
 
-## 8. Trạng thái kiểm thử
+## 8. Điều kiện vận hành
 
-Mã nguồn website đã được đưa vào repository tổng hợp theo cấu trúc dự án.
+Để các thành phần website, Admin và workflow hoạt động đồng bộ, môi trường triển khai cần đáp ứng các điều kiện sau:
 
-Các nội dung cần kiểm thử để xác nhận khả năng vận hành đầy đủ gồm:
+- Website được build và triển khai với cấu hình Netlify phù hợp.
+- Các biến môi trường frontend và server được khai báo đúng phạm vi sử dụng; secret chỉ được lưu ở phía server.
+- Supabase cung cấp dịch vụ xác thực, dữ liệu và vai trò theo cấu hình ứng dụng.
+- n8n được khởi động trên máy Windows và các workflow cần dùng được kích hoạt trong môi trường n8n.
+- Cloudflare Quick Tunnel duy trì kết nối HTTPS đến n8n; giá trị `N8N_BASE_URL` phản ánh URL tunnel hiện hành.
+- Webhook path, HTTP method và header xác thực giữa API trung gian và n8n được cấu hình thống nhất.
+- Các dịch vụ ngoài như Gemini, GA4 và Facebook sử dụng credentials tương ứng được cấu hình trong môi trường thực thi.
 
-- Cài đặt dependencies và build production.
-- Kiểm tra các trang giao diện dành cho khách hàng.
-- Kiểm tra đăng nhập, khôi phục mật khẩu và cập nhật mật khẩu Admin.
-- Kiểm tra phân quyền Admin, Creator, Approver và Publisher.
-- Kiểm tra các Netlify Functions và rewrite API sau khi deploy.
-- Kiểm tra kết nối Supabase.
-- Kiểm tra kết nối API với webhook n8n qua Cloudflare Tunnel.
-- Kiểm tra các workflow và dịch vụ bên ngoài có liên quan.
-
-Build frontend thành công không đồng nghĩa API, xác thực Admin và các workflow bên ngoài đã hoạt động. Chỉ cập nhật trạng thái hoàn thành sau khi thực hiện kiểm thử tương ứng.
+Build frontend, triển khai API, xác thực người dùng và thực thi workflow là các lớp riêng biệt. Mỗi lớp sử dụng cấu hình và quyền truy cập tương ứng trong kiến trúc hệ thống.
