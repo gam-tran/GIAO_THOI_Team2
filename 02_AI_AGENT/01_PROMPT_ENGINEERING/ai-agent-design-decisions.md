@@ -1,127 +1,117 @@
 # AI Agent Design Decisions
 
-> Mục đích: ghi lại các quyết định thiết kế quan trọng, vấn đề dẫn đến quyết định và tác động đến hệ thống. Tài liệu này giải thích logic thiết kế, không thay thế Central Instructions, runtime prompts hoặc tài liệu kiểm thử.
->
-> **Phạm vi bằng chứng:** các quyết định dưới đây được tổng hợp từ Central Instructions, ba workflow JSON exports, ảnh Agent Builder và cấu hình Tool do nhóm cung cấp. Những nội dung mới chỉ được đề xuất trong tài liệu không được xem là đã triển khai hoặc kiểm thử trên hệ thống thật.
+## 1. Mục tiêu thiết kế
 
-## 1. Tách hệ thống thành ba workflow theo mục tiêu công việc
+GIAO THỜI Marketing AI Agent được thiết kế để hỗ trợ các công việc Marketing theo hướng có căn cứ, nhất quán với thương hiệu và có thể chuyển thành đầu việc cụ thể. Các quyết định dưới đây xác định cách tổ chức Agent, sử dụng dữ liệu, lựa chọn công cụ và kiểm soát đầu ra.
 
-**Vấn đề:** Các yêu cầu Marketing có bản chất và đầu ra khác nhau. Nếu dùng một prompt duy nhất cho mọi tác vụ, prompt dễ trở nên dài, chồng chéo và khó kiểm soát cấu trúc kết quả.
+## 2. Các quyết định thiết kế trọng yếu
 
-**Quyết định:** Duy trì ba workflow riêng:
-- **AI Assistant:** hỗ trợ hội thoại và các yêu cầu Marketing tổng hợp.
+### Quyết định 1. Chia hệ thống thành ba workflow theo mục tiêu công việc
+
+**Bài toán:** Các yêu cầu Marketing có bản chất khác nhau: hội thoại tư vấn tổng hợp, sáng tạo nội dung và lập kế hoạch chiến dịch. Một prompt duy nhất phải xử lý tất cả sẽ dễ dài, chồng chéo và khó duy trì cấu trúc đầu ra ổn định.
+
+**Lựa chọn:**
+- **AI Assistant:** tiếp nhận hội thoại và hỗ trợ các yêu cầu Marketing tổng hợp.
 - **Content Studio:** tạo nội dung theo sản phẩm, nền tảng, định dạng, mục tiêu và giọng điệu.
-- **Campaign Planner:** lập kế hoạch chiến dịch theo brief, đối tượng, thời gian, kênh và ngân sách.
+- **Campaign Planner:** xây dựng kế hoạch chiến dịch dựa trên brief, đối tượng, thời gian, kênh và ngân sách.
 
-**Cơ sở lựa chọn:** Ba workflow có mục tiêu, biến đầu vào và yêu cầu đầu ra riêng trong các JSON exports. Tách theo nhiệm vụ giúp giữ đúng ngữ cảnh và quy tắc chuyên biệt của từng loại công việc.
+**Lý do:** Mỗi workflow có bộ đầu vào, logic xử lý và cấu trúc đầu ra riêng. Tách theo nhiệm vụ giúp prompt bám sát mục tiêu, đồng thời cho phép tối ưu và kiểm thử từng luồng độc lập.
 
-**Tác động:** Có thể tối ưu prompt, kiểm tra đầu vào và kiểm thử từng workflow độc lập; thay đổi ở một workflow ít làm ảnh hưởng đến hai workflow còn lại.
+**Tác động:** Hạn chế xung đột chỉ dẫn; dễ bảo trì và mở rộng từng nghiệp vụ mà không phải thay đổi toàn bộ Agent.
 
-**Trạng thái:** Đã thể hiện trong ba workflow exports được cung cấp; chưa xác minh trạng thái triển khai và thực thi hiện tại trên n8n.
+### Quyết định 2. Phân lớp Central Instructions, Workflow Prompts và Skills/References
 
-## 2. Phân lớp Central Instructions, Workflow Prompts và Skills/References
+**Bài toán:** Instructions ban đầu trộn vai trò chung, quy tắc nghiệp vụ, hướng dẫn chuyên môn và đặc tả module; một số nội dung lặp lại hoặc mâu thuẫn.
 
-**Vấn đề:** Instructions ban đầu có nhiều phần mô tả vai trò và module bị lặp, đồng thời trộn nguyên tắc chung với hướng dẫn nghiệp vụ và đặc tả giao diện.
+**Lựa chọn:** Tổ chức hướng dẫn thành ba lớp có trách nhiệm riêng:
 
-**Quyết định:** Phân chia trách nhiệm thành ba lớp:
-1. **Central Agent Instructions:** vai trò, bối cảnh GIAO THỜI, nguyên tắc chung, giới hạn quyền và định tuyến tác vụ.
-2. **Workflow-specific prompts:** mục tiêu từng workflow, biến đầu vào, cấu trúc đầu ra và quy tắc riêng.
+1. **Central Agent Instructions:** danh tính, bối cảnh GIAO THỜI, nguyên tắc chung, giới hạn quyền và định tuyến tác vụ.
+2. **Workflow-specific Prompts:** mục tiêu từng workflow, biến đầu vào, cấu trúc đầu ra và quy tắc riêng.
 3. **Skills/References:** phương pháp chuyên môn và hướng dẫn chi tiết có thể tái sử dụng.
 
-**Cơ sở lựa chọn:** Các quy tắc dùng chung chỉ cần quản lý tại một nơi; các yêu cầu đặc thù cần nằm gần workflow thực thi. Cách tổ chức này hạn chế lặp prompt và giảm nguy cơ quy tắc của tác vụ này vô tình chi phối tác vụ khác.
+**Lý do:** Quy tắc dùng chung được quản lý tập trung; hướng dẫn đặc thù đặt tại đúng workflow; kiến thức chuyên môn được tách thành tài liệu có thể tái sử dụng. Cách phân lớp này giảm lặp prompt và tránh để quy tắc của tác vụ này ảnh hưởng không phù hợp đến tác vụ khác.
 
-**Tác động:** Dễ bảo trì, cập nhật và kiểm thử theo từng lớp; khi thay đổi một phương pháp chuyên môn không nhất thiết phải viết lại toàn bộ Instructions.
+**Tác động:** Cấu trúc rõ ràng, dễ cập nhật, dễ kiểm soát phiên bản và thuận tiện bổ sung nghiệp vụ mới.
 
-**Trạng thái:** Đã chuẩn hóa trong tài liệu Central Instructions và tài liệu runtime prompt. Cần tiếp tục đối chiếu với cấu hình Builder thực tế.
+### Quyết định 3. Định tuyến Tool và Skill theo nhu cầu, không gọi đồng loạt
 
-## 3. Định tuyến Tool và Skill có chọn lọc
+**Bài toán:** Hệ thống có nhiều nguồn dữ liệu và công cụ phục vụ các mục tiêu khác nhau. Gọi toàn bộ công cụ cho mọi yêu cầu làm tăng dữ liệu thừa trong ngữ cảnh và có thể khiến Agent dựa vào nguồn không liên quan.
 
-**Vấn đề:** Agent có nhiều HTTP Request và nguồn tham chiếu. Gọi tất cả công cụ cho mọi yêu cầu vừa không cần thiết, vừa có thể đưa dữ liệu không liên quan vào ngữ cảnh xử lý.
+**Lựa chọn:** Chỉ gọi công cụ hoặc tải Skill/Reference khi nhiệm vụ thực sự cần nguồn đó:
+- Tra cứu thông tin sản phẩm: Product Catalogue.
+- Phân tích hiệu quả website: Google Analytics 4.
+- Xác định định vị, khách hàng và giọng điệu: Brand Knowledge Base.
+- Lập chiến lược nội dung, viết nội dung, lập chiến dịch hoặc thiết kế đo lường: Skill tương ứng.
 
-**Quyết định:** Chỉ gọi Tool/Skill/Reference khi nội dung yêu cầu cần đến nguồn đó và công cụ thực sự khả dụng. Ví dụ:
-- Tra cứu thông tin sản phẩm: dùng Product Catalogue.
-- Phân tích hành vi website: dùng GA4.
-- Xây dựng định hướng thương hiệu: dùng Brand Knowledge Base.
-- Viết nội dung hoặc lập chiến dịch: tải Skill tương ứng khi endpoint có sẵn.
+**Lý do:** Mỗi công cụ có phạm vi dữ liệu và chức năng riêng. Định tuyến theo mục đích giúp giảm truy xuất dư thừa, tăng tính liên quan và tránh nhầm lẫn giữa các nguồn.
 
-**Cơ sở lựa chọn:** Mỗi nguồn có chức năng khác nhau. Việc chọn nguồn theo mục đích giúp câu trả lời bám sát dữ liệu cần thiết, tránh truy xuất dư thừa và tránh giả định rằng một Tool có chức năng chưa được xác minh.
+**Tác động:** Quy trình xử lý minh bạch hơn; Agent chỉ sử dụng dữ liệu và phương pháp phù hợp với yêu cầu đang giải quyết.
 
-**Tác động:** Quy trình gọi công cụ rõ ràng hơn; giảm nguy cơ dùng sai nguồn hoặc khẳng định đã tra cứu khi request chưa được thực hiện thành công.
+### Quyết định 4. Ưu tiên dữ liệu nguồn và phân biệt dữ kiện với nhận định
 
-**Lưu ý về bằng chứng:** Cấu hình HTTP Request được cung cấp cho thấy các endpoint fetch Skill/Reference, nhưng ảnh Builder cho thấy khu vực native Skills đang trống. Hai cơ chế này không đồng nghĩa. Chưa có bằng chứng xác nhận Marketing Ideas Skill hoặc Product Marketing Context có endpoint fetch riêng trong Builder.
+**Bài toán:** Thông tin sản phẩm và thương hiệu có thể thay đổi. Nếu AI dựa vào trí nhớ mô hình hoặc tự hoàn thiện các trường còn thiếu, nội dung có thể xuất hiện giá, chất liệu, xuất xứ, chính sách hoặc tuyên bố thương hiệu không có căn cứ.
 
-**Trạng thái:** Quy tắc định tuyến đã được ghi trong Central Instructions; cần kiểm thử từng endpoint và xác nhận phản hồi thực tế.
+**Lựa chọn:** Sử dụng Product Catalogue và Brand Knowledge Base làm nguồn tham chiếu; không tự tạo thông tin khi nguồn không cung cấp. Trong phân tích và báo cáo, phân biệt bốn loại nội dung:
+- **FACT:** dữ kiện được nguồn hoặc công cụ xác nhận.
+- **CALCULATION:** kết quả tính toán từ dữ liệu có căn cứ.
+- **INSIGHT:** nhận định có lập luận dựa trên dữ kiện và phép tính.
+- **HYPOTHESIS:** giả thuyết cần được kiểm chứng.
 
-## 4. Lấy dữ liệu sản phẩm và thương hiệu từ nguồn, không ghi cứng hoặc tự suy diễn
+**Lý do:** Việc tách dữ kiện khỏi diễn giải giúp người sử dụng biết mức độ chắc chắn của từng kết luận và có thể truy ngược căn cứ.
 
-**Vấn đề:** Thông tin sản phẩm và thương hiệu có thể thay đổi. Nếu AI dựa vào trí nhớ mô hình hoặc nội dung ghi cứng trong prompt, có nguy cơ tạo ra giá, chất liệu, xuất xứ, chính sách hoặc thông tin thương hiệu không có căn cứ.
+**Tác động:** Hạn chế thông tin bịa đặt; tăng độ tin cậy của nội dung Marketing, phân tích và đề xuất.
 
-**Quyết định:** Khi nguồn khả dụng, truy xuất Product Catalogue và Brand Knowledge Base từ repository nguồn; yêu cầu Agent chỉ sử dụng thông tin thực tế trả về. Phân biệt rõ:
-- **FACT:** thông tin được nguồn hoặc Tool xác nhận.
-- **CALCULATION:** kết quả tính từ dữ liệu có căn cứ.
-- **INSIGHT:** nhận định có lập luận từ dữ liệu.
-- **HYPOTHESIS:** giả thuyết cần kiểm chứng.
+### Quyết định 5. Kiểm soát phạm vi truy vấn GA4 theo schema hợp lệ
 
-**Cơ sở lựa chọn:** Dữ liệu nguồn giúp nội dung có thể đối chiếu và cập nhật; phân loại mức độ chắc chắn giúp người đọc nhận biết đâu là dữ kiện, đâu là diễn giải hoặc đề xuất.
+**Bài toán:** Các phiên bản Instructions trước có danh sách Metrics và Dimensions không thống nhất. Việc đưa thêm nhiều trường vào yêu cầu không đồng nghĩa truy vấn sẽ hợp lệ hoặc tạo ra báo cáo tốt hơn.
 
-**Tác động:** Hạn chế bịa thông tin sản phẩm và thương hiệu; tăng khả năng truy vết căn cứ cho nội dung Marketing và báo cáo.
+**Lựa chọn:** Xác định rõ ngày bắt đầu, ngày kết thúc và múi giờ Property; chỉ sử dụng Metrics, Dimensions và bộ lọc được GA4 Data API hỗ trợ. Danh sách tối thiểu được dùng làm cơ sở hướng dẫn gồm activeUsers, sessions, screenPageViews và các Dimensions date, sessionDefaultChannelGroup. Các trường mở rộng chỉ được sử dụng khi schema và tổ hợp truy vấn xác nhận hợp lệ.
 
-**Trạng thái:** Quy tắc đã có trong Central Instructions và các runtime prompt. Cần kiểm thử tình huống nguồn trống, thiếu trường hoặc không tìm thấy sản phẩm.
+**Lý do:** Tính hợp lệ của truy vấn phụ thuộc vào khả năng tương thích giữa Metrics, Dimensions và bộ lọc. Cần ưu tiên tính chính xác, nhất quán thay vì mở rộng số lượng chỉ số một cách hình thức.
 
-## 5. Thận trọng với phạm vi truy vấn GA4
+**Tác động:** Giảm lỗi truy vấn và hạn chế diễn giải sai dữ liệu; báo cáo phản ánh đúng phạm vi đo lường của GA4.
 
-**Vấn đề:** Instructions ban đầu có hai danh sách Metrics/Dimensions không thống nhất: một phần nêu 3 Metrics và 2 Dimensions, phần khác mở rộng danh sách. Cấu hình/schema thực tế của Tool chưa được xác minh đầy đủ tại thời điểm rà soát.
+### Quyết định 6. Giữ quyền phê duyệt của con người đối với hành động bên ngoài
 
-**Quyết định:** Không mặc định toàn bộ trường mở rộng đều dùng được. Dùng danh sách tối thiểu được nêu trong Instructions làm cơ sở ban đầu; chỉ mở rộng khi GA4 Data API xác nhận trường và tổ hợp truy vấn hợp lệ. Khi truy vấn, xác định rõ date range và múi giờ Property nếu cần diễn giải ngày.
+**Bài toán:** Đầu ra Marketing có thể dẫn đến hành động ảnh hưởng trực tiếp đến khách hàng, ngân sách và hệ thống đang vận hành.
 
-**Cơ sở lựa chọn:** Truy vấn chỉ hợp lệ khi Metrics, Dimensions và bộ lọc tương thích với schema API. Danh sách dài hơn không đồng nghĩa báo cáo chính xác hơn.
+**Lựa chọn:** Agent thực hiện các công việc đọc dữ liệu, phân tích, tổng hợp, soạn nội dung và đề xuất kế hoạch. Các hành động như đăng bài, gửi tin nhắn, tạo hoặc chỉnh sửa quảng cáo, chi tiêu ngân sách và thay đổi cấu hình bên ngoài phải nằm trong phạm vi công cụ được cấp quyền và có sự phê duyệt phù hợp.
 
-**Tác động:** Giảm nguy cơ lỗi truy vấn và diễn giải sai; bảo đảm kết quả báo cáo phản ánh dữ liệu thực tế thay vì trường tự giả định.
+**Lý do:** AI hỗ trợ quá trình ra quyết định nhưng không thay thế trách nhiệm của người vận hành đối với các hành động có tác động thực tế.
 
-**Trạng thái:** Quy tắc thận trọng đã được ghi trong Central Instructions. Cần kiểm tra schema thực tế, cách truyền request body và chạy truy vấn thử trước khi xác nhận hoàn tất.
+**Tác động:** Duy trì quyền kiểm soát của nhóm Marketing, giảm nguy cơ thực hiện hành động ngoài ý muốn và tăng khả năng kiểm soát rủi ro.
 
-## 6. Giữ ranh giới giữa đề xuất của AI và hành động bên ngoài
+### Quyết định 7. Kiểm tra dữ liệu đầu vào trước khi dựng prompt Campaign Planner
 
-**Vấn đề:** Các tác vụ Marketing có thể dẫn đến hành động ảnh hưởng khách hàng, ngân sách hoặc hệ thống đang vận hành.
+**Bài toán:** Trong Campaign Planner, trường channels được xử lý bằng phương thức join. Nếu trường bị thiếu hoặc không phải mảng, bước dựng prompt có thể phát sinh lỗi. Các trường đầu vào khác cũng cần được kiểm tra để tránh đưa brief không đầy đủ vào mô hình.
 
-**Quyết định:** Cho phép Agent đọc dữ liệu, phân tích, soạn nội dung và đề xuất kế hoạch; không tự đăng bài, gửi tin nhắn, tạo/sửa quảng cáo, chi tiêu ngân sách hoặc thay đổi cấu hình hệ thống khi chưa có sự cho phép phù hợp.
+**Lựa chọn:** Quy định kiểm tra đầu vào trước khi dựng prompt:
+- Kiểm tra các trường bắt buộc của Campaign Brief.
+- Kiểm tra channels tồn tại, có kiểu mảng và các phần tử có kiểu dữ liệu hợp lệ.
+- Với dữ liệu thiếu hoặc sai kiểu, trả thông báo lỗi cụ thể để người dùng điều chỉnh.
+- Chỉ dựng prompt khi dữ liệu đáp ứng cấu trúc yêu cầu.
 
-**Cơ sở lựa chọn:** Nội dung do AI tạo cần được con người xem xét trước khi trở thành hành động thực tế, đặc biệt với hoạt động có tác động đến khách hàng và chi phí.
+**Lý do:** Xác thực tại đầu vào giúp phát hiện lỗi sớm và có kiểm soát, thay vì để lỗi phát sinh bên trong bước xử lý prompt.
 
-**Tác động:** Duy trì quyền quyết định của người vận hành và giảm rủi ro hành động ngoài ý muốn.
+**Tác động:** Tăng độ ổn định của Campaign Planner, giúp thông báo lỗi dễ hiểu và bảo đảm kế hoạch được tạo từ brief có cấu trúc hợp lệ.
 
-**Trạng thái:** Đã ghi trong Central Instructions; cần xác minh các bước approval và quyền thực thi thực tế của từng công cụ.
+### Quyết định 8. Ràng buộc định dạng media cho bài đăng Facebook
 
-## 7. Bổ sung kiểm soát đầu vào cho Campaign Planner
+**Bài toán:** Yêu cầu nội dung có thể đồng thời bao gồm ảnh và video, trong khi cấu trúc bài đăng được xác định cho luồng này là album nhiều ảnh hoặc một video riêng.
 
-**Vấn đề:** Trong Campaign Planner Code node, trường `channels` được gọi bằng `.join()`. Nếu trường bị thiếu hoặc không phải mảng, bước dựng prompt có thể phát sinh lỗi. Các trường đầu vào khác cũng chưa thể hiện đầy đủ kiểm tra bắt buộc trong đoạn code export đã rà soát.
+**Lựa chọn:** Một bài Facebook chỉ sử dụng một trong hai định dạng: album nhiều ảnh hoặc một video. Khi người dùng yêu cầu cả ảnh và video trong cùng một bài, Agent giải thích giới hạn và yêu cầu người dùng chọn định dạng; không tự ý tách thành hai bài đăng.
 
-**Quyết định:** Bổ sung validation trước khi dựng prompt: kiểm tra trường bắt buộc, kiểu dữ liệu và cấu trúc `channels`; nếu không hợp lệ, trả lỗi đầu vào rõ ràng thay vì để workflow dừng do lỗi xử lý không kiểm soát.
+**Lý do:** Việc tự tách bài sẽ làm thay đổi số lượng nội dung và ý định ban đầu của người dùng. Yêu cầu xác nhận giúp giữ quyền quyết định định dạng và phạm vi nội dung ở người sử dụng.
 
-**Cơ sở lựa chọn:** Kiểm tra đầu vào tại ranh giới workflow giúp phát hiện lỗi sớm, cho người dùng biết cần sửa gì và tránh gửi một brief thiếu dữ liệu vào LLM.
+**Tác động:** Đầu ra nhất quán với yêu cầu, hạn chế việc tạo nội dung ngoài phạm vi được lựa chọn.
 
-**Tác động:** Tăng độ ổn định và khả năng dự đoán của Campaign Planner; dễ kiểm thử các trường hợp thiếu, null hoặc sai kiểu.
+## 3. Nguyên tắc xuyên suốt
 
-**Trạng thái:** Đã xác định vấn đề và ghi remediation/test case trong audit. **Chưa có bằng chứng validation đã được triển khai vào workflow đang chạy.**
+Tám quyết định trên được liên kết bởi bốn nguyên tắc:
 
-## 8. Ràng buộc định dạng media cho bài đăng Facebook
+1. **Đúng nhiệm vụ:** mỗi yêu cầu được xử lý bởi workflow và phương pháp phù hợp.
+2. **Đúng nguồn:** thông tin sản phẩm, thương hiệu và số liệu phải có căn cứ.
+3. **Đúng phạm vi:** chỉ sử dụng công cụ, trường dữ liệu và hành động phù hợp với mục tiêu.
+4. **Có kiểm soát:** các kết luận phải phân biệt dữ kiện với nhận định; hành động có tác động bên ngoài phải giữ quyền phê duyệt của con người.
 
-**Vấn đề:** Một yêu cầu tạo nội dung có thể chứa cả ảnh và video, trong khi quy tắc đăng bài của luồng Facebook được xác định là một bài chỉ dùng album nhiều ảnh hoặc một video riêng.
-
-**Quyết định:** Không tạo một bài Facebook trộn ảnh và video. Nếu yêu cầu có cả hai loại media, Agent phải giải thích giới hạn và hỏi người dùng chọn định dạng; không tự tách thành hai bài đăng.
-
-**Cơ sở lựa chọn:** Giữ đúng ý định và cấu trúc nội dung mà người dùng yêu cầu; tránh tự ý thay đổi số lượng bài đăng hoặc tạo nội dung ngoài phạm vi được duyệt.
-
-**Tác động:** Giảm sai lệch giữa nội dung được yêu cầu, nội dung được duyệt và nội dung chuyển sang bước đăng tải.
-
-**Trạng thái:** Đã ghi guardrail trong Central Instructions và tài liệu runtime prompt. **Chưa có bằng chứng kiểm tra ràng buộc này ở frontend/workflow hoặc kiểm thử end-to-end.**
-
-## 9. Nguyên tắc đánh giá mức độ hoàn thành
-
-Không đánh đồng việc viết tài liệu với việc triển khai thành công. Khi báo cáo tiến độ, phân biệt bốn mức:
-1. **Đã phân tích:** vấn đề và nguyên nhân đã được xác định.
-2. **Đã đặc tả:** quyết định hoặc phương án xử lý đã được ghi thành tài liệu/prompt.
-3. **Đã triển khai:** thay đổi đã được cập nhật vào Builder, frontend hoặc workflow tương ứng.
-4. **Đã kiểm thử:** có kết quả chạy thực tế chứng minh hành vi mong đợi.
-
-Tại thời điểm lập tài liệu này, việc chuẩn hóa tài liệu và đặc tả một số biện pháp khắc phục đã hoàn thành; các bước cập nhật Builder/n8n và kiểm thử runtime vẫn cần được xác minh riêng.
+Các nguyên tắc này là cơ sở thống nhất cho Central Instructions, workflow prompts, Skills/References và cách đánh giá đầu ra của GIAO THỜI Marketing AI Agent.
