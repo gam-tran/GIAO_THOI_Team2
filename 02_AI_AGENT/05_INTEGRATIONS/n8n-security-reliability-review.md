@@ -1,74 +1,99 @@
 # n8n Security and Reliability Review
 
-> Phân tích tĩnh 19 workflow JSON export ngày 25/11/2026. Đây là rủi ro cần xác minh, không phải bằng chứng hệ thống đã bị xâm nhập.
+**Phạm vi:** Phân tích tĩnh 19 workflow JSON exports ngày 25/11/2026.  
+**Cách tiếp cận:** Đánh giá node cấu hình, webhook triggers, Code nodes, endpoint và luồng dữ liệu thể hiện trong exports. Các phát hiện là rủi ro kiến trúc cần được kiểm soát; không phải bằng chứng hệ thống đã bị xâm nhập.
 
-## 1. Webhook authentication – ưu tiên cao
+## 1. Webhook authentication
 
-20 webhook triggers trong export: 5 khai báo `headerAuth`, 15 không khai báo authentication ở cấp Webhook node. Các nhóm không khai báo auth bao gồm AI Assistant, Marketing Insights, Analytics, Dashboard, Content Studio, Campaign Planner, Content Approval, Content Library GET, Content Save, Facebook Auto Posting và Automation endpoints.
+Trong các exports có 20 Webhook triggers: 5 khai báo `headerAuth`, 15 không khai báo authentication ở cấp Webhook node.
 
-Nếu webhook production có thể gọi trực tiếp từ Internet, các endpoint có thể bị gọi ngoài luồng website, gây phát sinh chi phí AI, đọc/sửa dữ liệu, đăng Facebook hoặc điều khiển workflow.
+Các nhóm không khai báo authentication ở node gồm AI Assistant, Marketing Insights, Analytics, Dashboard, Content Studio, Campaign Planner, Content Approval, Content Library GET, Content Save, Facebook Auto Posting và các Automation endpoints.
 
-Khuyến nghị:
-1. Xác minh Supabase auth/role checks của API proxy cho từng route.
-2. Không dựa duy nhất vào UI ẩn webhook URL.
-3. Bật webhook auth hoặc server-side signature/gateway cho endpoint phù hợp.
-4. Ưu tiên bảo vệ Content Approval, Content Save, Facebook Auto Posting và Automation Control.
-5. Kiểm thử production URL bằng request thiếu credential và xác nhận bị từ chối.
+Nếu webhook có thể được gọi trực tiếp từ Internet mà không qua lớp API proxy có xác thực, endpoint có thể bị gọi ngoài luồng website. Tác động tiềm tàng gồm phát sinh chi phí AI, truy cập hoặc thay đổi dữ liệu, đăng Facebook và điều khiển workflow.
 
-## 2. Automation Control nhận workflowId tùy ý – ưu tiên rất cao
+**Kiểm soát cần áp dụng:**
+- Xác thực phiên Supabase và kiểm tra role ở API proxy cho từng route.
+- Bảo vệ webhook bằng authentication hoặc cơ chế ký request/gateway phù hợp.
+- Không dựa duy nhất vào việc ẩn webhook URL ở frontend.
+- Áp dụng kiểm soát chặt với Content Approval, Content Save, Facebook Auto Posting và Automation Control.
+- Ghi log danh tính người gọi, thời điểm, hành động và kết quả.
 
-Code `Validate Control Request` chỉ kiểm tra workflowId có tồn tại và action thuộc `publish/unpublish`. Không thấy allowlist workflowId trước khi gọi n8n REST API activate/deactivate. Nếu webhook bị gọi trực tiếp không qua proxy, rủi ro là người gọi có thể kích hoạt hoặc tắt workflow bất kỳ mà credential nội bộ cho phép.
+## 2. Automation Control và quyền workflow
 
-Khuyến nghị: allowlist workflow IDs và role authorization phía server; không chỉ dựa vào frontend/API proxy.
+Code node `Validate Control Request` kiểm tra workflowId có tồn tại và action thuộc `publish/unpublish`. Trong phần code được phân tích không thể hiện allowlist workflowId trước khi gọi n8n REST API activate/deactivate.
 
-## 3. Duplicate Content Library Save route – ưu tiên cao
+Nếu endpoint bị gọi trực tiếp và không có lớp phân quyền bổ sung, người gọi có thể yêu cầu thay đổi trạng thái của workflow khác trong phạm vi quyền credential nội bộ.
 
-Hai workflow cùng khai báo POST `giaothoi-content-library-save`:
-- Content Library API: headerAuth.
-- Content Save API: không khai báo auth.
+**Kiểm soát cần áp dụng:** allowlist workflow IDs, kiểm tra role ở server, giới hạn action theo vai trò và ghi audit log cho mọi thao tác activate/deactivate. Không chỉ dựa vào frontend hoặc API proxy để giới hạn quyền.
 
-Cần chọn endpoint chuẩn, đổi hoặc loại bỏ route dư sau khi xác minh frontend gọi route nào. Không suy luận cách n8n định tuyến khi hai workflow cùng active chỉ từ export.
+## 3. Duplicate Content Library Save route
 
-## 4. Endpoint tạo thay đổi/tác động ngoài
+Hai workflow cùng khai báo POST path `giaothoi-content-library-save`:
 
-Content Approval cập nhật Data Table; Content Save chèn row; Facebook Auto Posting đăng bài; Automation Control activate/deactivate workflow; Automation Run thực thi workflow. Cần auth, role checks, payload validation, rate limit và audit log. Publish phải có approval hợp lệ.
+- Content Library API: có `headerAuth`.
+- Content Save API: không khai báo authentication tại Webhook node.
 
-## 5. GA4 kỳ dữ liệu không đồng nhất
+Việc trùng route tạo ra sự không rõ ràng về endpoint chuẩn và chính sách xác thực. Cần duy trì một route chuẩn, bảo đảm frontend gọi đúng route và loại bỏ hoặc đổi path route không sử dụng sau khi đối chiếu cấu hình triển khai.
 
-Analytics API dùng period động 7/28/90 cho phần lớn truy vấn, nhưng GA4 Devices hard-code 7daysAgo–yesterday. Dashboard API ghi kỳ cố định 7daysAgo–yesterday. Nên dùng một startDate/endDate chung và trả metadata kỳ thực tế.
+## 4. Endpoint có tác động ghi hoặc hành động bên ngoài
+
+Các workflow có hành động thay đổi trạng thái hoặc dữ liệu gồm:
+
+| Nhóm chức năng | Tác động |
+|---|---|
+| Content Approval | Cập nhật Data Table |
+| Content Save | Thêm bản ghi |
+| Facebook Auto Posting | Đăng nội dung lên Facebook |
+| Automation Control | Activate/deactivate workflow |
+| Automation Run | Thực thi workflow |
+
+Các thao tác này cần xác thực, phân quyền theo vai trò, kiểm tra payload, rate limit và audit log. Hành động publish cần gắn với trạng thái approval hợp lệ và người có quyền phê duyệt.
+
+## 5. GA4 reporting period consistency
+
+Analytics API sử dụng period động 7/28/90 ngày cho phần lớn truy vấn, trong khi GA4 Devices hard-code khoảng `7daysAgo–yesterday`. Dashboard API cũng trả kỳ cố định `7daysAgo–yesterday`.
+
+Khi người dùng chọn 28 hoặc 90 ngày, báo cáo thiết bị có thể không cùng kỳ với các báo cáo còn lại.
+
+**Nguyên tắc thống nhất:** dùng chung startDate/endDate cho các truy vấn trong một báo cáo và trả metadata kỳ dữ liệu thực tế để người đọc nhận biết phạm vi phân tích.
 
 ## 6. Scheduled Publishing reliability
 
-Code chỉ lấy tối đa một bài mỗi lượt; bỏ qua bài đã có Facebook Post ID; retry tối đa 3 lần, retryAfter 5 phút rồi 15 phút; claim status Publishing trước khi đăng.
+Code trong workflow được phân tích có các đặc điểm:
 
-Cần test:
-- Workflow dừng sau claim, trước publish.
-- Facebook publish thành công nhưng update Data Table lỗi.
-- Signed URL hết hạn.
-- Timeout nhưng Facebook đã nhận bài.
-- Hai execution chạy đồng thời.
+- Mỗi lượt xử lý tối đa một bài.
+- Bỏ qua bài đã có Facebook Post ID.
+- Retry tối đa 3 lần, với retryAfter 5 phút rồi 15 phút.
+- Cập nhật trạng thái Publishing trước khi gọi thao tác đăng.
 
-Cân nhắc stale Publishing recovery và kiểm tra post ID trước retry để tránh đăng trùng.
+Các tình huống rủi ro cần được xử lý trong thiết kế vận hành:
+
+- Workflow dừng sau khi claim bài nhưng trước khi publish.
+- Facebook publish thành công nhưng cập nhật Data Table thất bại.
+- Signed URL hết hạn trước khi Facebook tải media.
+- Request timeout dù Facebook đã nhận bài.
+- Hai execution cùng xử lý một bản ghi.
+
+Cơ chế phục hồi cần nhận diện trạng thái Publishing bị treo, kiểm tra post ID trước khi retry và hạn chế đăng trùng khi kết quả request không rõ ràng.
 
 ## 7. Timezone
 
-Code lọc lịch ghép date/time với UTC+7. Export không xác nhận timezone toàn instance/workflow. Kiểm tra timezone và test bài sát thời điểm đổi ngày.
+Code lọc lịch kết hợp date/time theo UTC+7. Export không xác định đầy đủ timezone của toàn bộ n8n instance và từng workflow. Vì vậy, timezone cần được cấu hình nhất quán giữa instance, Schedule Trigger, dữ liệu lịch và cách hiển thị ở frontend. Các mốc sát thời điểm chuyển ngày cần được xử lý theo cùng một quy ước.
 
-## 8. Không thấy trong export
+## 8. Credential và secret handling
 
-- Quét JSON không thấy literal key apiKey/accessToken/clientSecret/password/authorization.
-- Credential references có tên/ID nhưng không có secret value.
-- Không có execution logs nên chưa đánh giá được runtime success/error.
-- Không thể xác nhận webhook public hay được proxy bảo vệ nếu chưa test production.
+Phân tích JSON exports không phát hiện literal key có tên phổ biến như `apiKey`, `accessToken`, `clientSecret`, `password` hoặc `authorization`. Exports có credential references nhưng không chứa secret values tương ứng.
 
-## 9. Checklist
+Điều này không chứng minh credential an toàn tuyệt đối hoặc còn hiệu lực. Credential values, OAuth tokens, webhook secrets, encryption key và mật khẩu backup cần được lưu trong cơ chế quản lý secret phù hợp, không đưa vào Git.
 
-- [ ] Test mọi webhook khi thiếu credential.
-- [ ] Bảo vệ endpoint đọc/ghi dữ liệu và publish.
-- [ ] Allowlist Automation Control workflow IDs.
-- [ ] Giải quyết duplicate Content Library Save route.
-- [ ] Đồng bộ kỳ GA4.
-- [ ] Xác minh quyền credentials.
-- [ ] Test retry/duplicate publish/stale Publishing.
-- [ ] Xác nhận timezone.
-- [ ] Bật audit log cho thao tác thay đổi trạng thái.
+## 9. Giới hạn của phân tích
+
+Workflow exports không cung cấp execution logs và không đủ để kết luận:
+
+- Webhook production có thể truy cập trực tiếp từ Internet hay chỉ qua API proxy.
+- Credentials còn hiệu lực và có đúng phạm vi quyền hay không.
+- Các request publish/analytics đã thực thi thành công trong môi trường thật.
+- Cấu hình timezone hiện tại của toàn instance.
+- Hệ thống phục hồi đúng trong mọi tình huống timeout hoặc lỗi một phần.
+
+Các nội dung trên là giới hạn bằng chứng của phân tích tĩnh; không được diễn giải thành kết luận hệ thống đã xảy ra sự cố.
