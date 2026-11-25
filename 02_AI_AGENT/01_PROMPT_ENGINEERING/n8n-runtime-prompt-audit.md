@@ -209,3 +209,36 @@ The user supplied endpoint descriptions and HTTP method/configuration for the fo
 - [ ] Execute Product Catalogue and Brand Knowledge GET requests and inspect response shape.
 - [ ] Execute each of the four Skill fetchers and confirm the returned Markdown is passed into the agent context.
 - [ ] Confirm approval settings for each tool and test approval behavior.
+
+
+## Additional Builder Tool configuration supplied by user (25/11/2026)
+
+The user subsequently supplied the following HTTP GET Skill and Reference fetchers. All are unauthenticated raw GitHub reads from source repository `gam-tran/giao-thoi-website-v3`, branch `feature/ga4-ai-agent`. This confirms configured descriptions/endpoints as supplied, not successful runtime execution.
+
+| Type | Resource | Source path | Intended use |
+|---|---|---|---|
+| Skill | Campaign Planning | `docs/docs/marketing-skills/skills/campaign-planning/SKILL.md` | End-to-end campaign planning; objectives, audience, insight, message, channels, content, schedule, budget, KPI; distinguish facts from assumptions; no autonomous publishing/messaging/ads |
+| Reference | Social platforms | `docs/docs/marketing-skills/skills/social-content/references/platforms.md` | Select platform, format and channel-specific execution |
+| Reference | Social post templates | `docs/docs/marketing-skills/skills/social-content/references/post-templates.md` | Post, carousel, video script, tutorial and hook structures |
+| Reference | Social reverse engineering | `docs/docs/marketing-skills/skills/social-content/references/reverse-engineering.md` | Analyze benchmark content; separate observations from causal hypotheses |
+| Reference | Copywriting frameworks | `docs/docs/marketing-skills/skills/copywriting/references/copy-frameworks.md` | Select copywriting structure by objective and customer journey |
+| Reference | Natural transitions | `docs/docs/marketing-skills/skills/copywriting/references/natural-transitions.md` | Improve flow and transitions without mechanical connectors |
+| Reference | Analytics event library | `docs/docs/marketing-skills/skills/analytics-tracking/references/event-library.md` | GA4 events and parameters; distinguish proposed from implemented tracking |
+| Reference | GA4 implementation | `docs/docs/marketing-skills/skills/analytics-tracking/references/ga4-implementation.md` | GA4 configuration, measurement and troubleshooting guidance |
+| Reference | GTM implementation | `docs/docs/marketing-skills/skills/analytics-tracking/references/gtm-implementation.md` | Tags, triggers, variables and Data Layer guidance |
+
+### Updated inventory interpretation
+
+- Confirmed from user-supplied descriptions: 1 Product Catalogue endpoint, 1 GA4 report endpoint, 1 GA4 body-builder description, 1 Brand Knowledge endpoint, 5 Skill fetchers (Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning), and 8 Reference fetchers listed above.
+- This is a functional inventory of the supplied excerpts, not yet a verified complete enumeration of all 16 HTTP Request tools. The exact UI tool names, request node wiring, response mapping, and execution results have not been supplied.
+- Marketing Ideas Skill and Product Marketing Context remain unconfirmed as Builder HTTP fetchers. Repository presence alone is not proof of a connected endpoint.
+- References should be fetched selectively when their subject is relevant, not all on every user request.
+- Campaign Planning Skill instructions explicitly prohibit autonomous publishing, customer messaging, or ad execution; this is consistent with the central approval boundary.
+
+### Updated next verification items
+
+- [ ] Obtain descriptions/configurations for any remaining HTTP Request tools to reconcile the inventory against the UI count of 16.
+- [ ] Verify all listed raw GitHub GET endpoints return the expected Markdown/source content.
+- [ ] Confirm each Skill/Reference response is actually made available to the model after the HTTP Request runs.
+- [ ] Verify whether approval is enabled per tool; supplied excerpts show the “Require approval” option but do not establish its current checked state.
+- [ ] Test selective Reference routing and confirm the agent does not fetch unrelated references.
