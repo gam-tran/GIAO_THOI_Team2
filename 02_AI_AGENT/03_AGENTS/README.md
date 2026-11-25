@@ -2,38 +2,29 @@
 
 ## GIAO THỜI Marketing Assistant
 
-Frontend thể hiện một AI Assistant trong Admin. n8n export bổ sung bằng chứng về prompt runtime và cách workflow xử lý hội thoại.
+GIAO THỜI Marketing Assistant là giao diện trợ lý Marketing trong khu vực Admin. Frontend gửi lịch sử hội thoại đến API trung gian của website; API chuyển tiếp yêu cầu đến webhook AI Assistant trong n8n.
 
-### Frontend/API proxy
-- Frontend: src/admin/pages/AIAssistant.tsx.
-- Route website: POST /api/n8n/giaothoi-ai-assistant.
-- API proxy xác thực request Supabase trước khi chuyển tiếp.
-- Request body: { messages: [...] }; frontend gửi tối đa 12 message gần nhất.
-- Webhook n8n: /webhook/giaothoi-ai-assistant.
-- Header proxy: X-GIAO-THOI-KEY, lấy từ N8N_WEBHOOK_KEY.
+### Luồng xử lý
 
-### n8n runtime được export
-Workflow GIAO THỜI - AI Assistant API:
-1. Lấy Product Data từ GitHub raw products.ts.
-2. Lấy Brand Knowledge từ product-marketing-context.md.
-3. Lọc tối đa 12 message role user/assistant.
-4. Ghép lịch sử hội thoại vào prompt.
-5. Gọi Google Gemini Chat Model.
-6. Trả success/content/message.
+1. Người dùng gửi nội dung từ trang AI Assistant trong Admin.
+2. Frontend gửi request đến route POST /api/n8n/giaothoi-ai-assistant.
+3. API proxy xác thực phiên Supabase và chuyển tiếp request hợp lệ.
+4. Webhook n8n nhận messages, lọc các message hợp lệ và giới hạn lịch sử ở 12 message gần nhất.
+5. Workflow lấy Product Data và Brand Knowledge từ GitHub, dựng prompt hội thoại và gọi Google Gemini Chat Model.
+6. Workflow trả nội dung phản hồi về frontend thông qua API proxy.
 
-Prompt runtime yêu cầu tiếng Việt, tư duy Marketing thực tế, không bịa dữ liệu sản phẩm và xác định GIAO THỜI là đơn vị phân phối.
+### Cấu hình Agent Builder
 
-### Tài liệu
-- [Agent Builder Configuration](./agent-builder-configuration.md): model, Tools, Skills và Trigger quan sát từ ảnh Builder.
-- [AI Agent Runtime and Tool Mapping](./ai-agent-runtime-and-tool-mapping.md): chi tiết workflow prompt và giới hạn đã xác minh.
-- [Instructions Draft](../01_PROMPT_ENGINEERING/marketing-ai-agent-instructions-v1.md): bản Instructions đề xuất, chưa xác nhận là prompt production.
-- [Marketing Skills](../02_MARKETING_SKILLS/README.md).
+Ảnh cấu hình Builder được cung cấp thể hiện model gemini-3.1-flash-lite, trigger n8n Chat, nhóm Tools gồm HTTP Request và Google Analytics, cùng khu vực Skills. Đây là cấu hình giao diện Builder; nó được phân biệt với các Gemini Chat Model node bên trong workflow n8n.
 
-### Phân biệt hai cấu hình
-Ảnh Agent Builder hiển thị model gemini-3.1-flash-lite, Trigger n8n Chat, Tools 16 HTTP Request và Google analytics; Skills panel trống. n8n export có Gemini Chat Model nodes và workflow riêng. Chưa đủ bằng chứng kết luận hai lớp cấu hình dùng chung một runtime hoặc Builder Skills tự động được nạp vào webhook workflow.
+### Tài liệu liên quan
 
-### Chưa xác minh
-- Builder Agent gọi webhook AI Assistant API hay xử lý model trực tiếp.
-- Model thực tế trong Gemini node.
-- HTTP Request và Google Analytics Builder Tools đang trỏ tới đâu.
-- Persistent memory hoặc Skill loader; không thấy các node này trong AI Assistant workflow export.
+- [Agent Builder Configuration](./agent-builder-configuration.md)
+- [AI Agent Runtime and Tool Mapping](./ai-agent-runtime-and-tool-mapping.md)
+- [Central Agent Instructions](../01_PROMPT_ENGINEERING/marketing-ai-agent-instructions-v1.md)
+- [AI Agent Design Decisions](../01_PROMPT_ENGINEERING/ai-agent-design-decisions.md)
+- [Marketing Skills](../02_MARKETING_SKILLS/README.md)
+
+### Kiến trúc hai lớp
+
+Agent Builder và n8n runtime là hai lớp cấu hình riêng. Builder quản lý trải nghiệm Agent, trigger và các Tools được khai báo trong giao diện. Các workflow n8n có prompt, node model và luồng xử lý riêng. Việc một Skill hoặc Tool xuất hiện trong tài liệu không tự động chứng minh nó đã được nạp vào workflow runtime.
