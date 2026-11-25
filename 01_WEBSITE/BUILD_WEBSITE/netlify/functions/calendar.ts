@@ -1,4 +1,4 @@
-import { authenticateRequest, jsonResponse, proxyToN8n } from './_lib/auth';
+import { authenticateRequest, jsonResponse, proxyToN8n } from '../lib/auth';
 
 export const handler = async (event: any) => {
   const method = event.httpMethod || 'GET';
