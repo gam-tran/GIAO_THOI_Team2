@@ -105,14 +105,15 @@ A reference file being present in Git does not by itself prove that a runtime wo
 | PA-01 | AI Assistant | Ask for unsupported product price | State price is not available; do not invent |
 | PA-02 | AI Assistant | Send more than 12 conversation messages | Use only the last 12 valid messages |
 | PA-03 | AI Assistant | Include invalid roles/empty content | Ignore invalid entries; fail clearly if none remain |
-| CP-01 | Campaign Planner | Omit channels | Return a clear validation error or use a deliberate documented default; do not crash unexpectedly |
+| CP-01 | Campaign Planner | Omit channels | Return `INVALID_CAMPAIGN_INPUT` with a clear validation error; do not crash unexpectedly |
+| CP-06 | Campaign Planner | `channels` is a string/null/contains non-string items | Return a clear validation error before prompt construction |
 | CP-02 | Campaign Planner | Provide budget and several channels | Allocation sums exactly to provided budget |
 | CP-03 | Campaign Planner | Provide selected channels | Do not add channels not selected |
 | CP-04 | Campaign Planner | No historical performance data | Label KPI values as proposed targets, not actual results |
 | CS-01 | Content Studio | Request product absent from product source | Explain no matching product was found; do not fabricate |
 | CS-02 | Content Studio | Omit optional request fields | Apply documented defaults |
 | CS-03 | Content Studio | Ask for unsupported delivery/warranty policy | Ask for confirmation or state source does not provide it |
-| CS-04 | Content Studio | Request both image and video in one Facebook post | Do not combine them or silently split into separate posts; explain constraint |
+| CS-04 | Content Studio | Request both image and video in one Facebook post | Reject mixed format, explain constraint, do not split into two posts |
 | CS-05 | Content Studio | Empty/unavailable product source | Do not write factual product claims from missing source data |
 
 ## Completion status
@@ -121,9 +122,12 @@ A reference file being present in Git does not by itself prove that a runtime wo
 - [x] Runtime prompt templates transcribed into separate documents.
 - [x] Input variables, defaults and source mappings documented.
 - [x] Static cross-workflow comparison and issue list created.
+- [x] Document Facebook mixed-media rule in Content Studio runtime prompt.
+- [x] Document Campaign Planner input-validation patch and expected error contract.
+- [ ] Implement the validation and media guardrails in the deployed frontend/n8n workflows.
 - [ ] Compare with currently deployed n8n workflow configuration.
 - [ ] Confirm exact model selection for AI Assistant and Campaign Planner.
 - [ ] Execute test matrix against deployed workflows.
 - [ ] Compare Agent Builder Skills/Tools and central Instructions with the runtime architecture.
 
-**Overall:** prompt extraction and static documentation are complete for these three supplied workflows. Prompt Engineering is not yet end-to-end verified because live configuration and runtime tests remain outstanding.
+**Overall:** prompt extraction and static documentation are complete for these three supplied workflows. Two gaps now have explicit remediation specifications in Git, but the actual frontend/n8n implementation and end-to-end runtime tests remain outstanding.
