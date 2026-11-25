@@ -37,8 +37,8 @@ Các thành phần đáng chú ý:
 - Kiểm tra vai trò và quyền truy cập của người dùng.
 - Hỗ trợ các vai trò: Admin, Creator, Approver và Publisher.
 - Hỗ trợ quy trình khôi phục và cập nhật mật khẩu.
-- Quản lý các hoạt động liên quan đến nội dung và quy trình phê duyệt.
-- Tích hợp API và workflow bên ngoài để hỗ trợ hoạt động vận hành.
+- Quản lý các hoạt động liên quan đến nội dung, lịch nội dung và quy trình phê duyệt.
+- Tích hợp API trung gian để kết nối workflow n8n.
 
 Việc truy cập các chức năng quản trị phụ thuộc vào tài khoản, vai trò và cấu hình hệ thống.
 
@@ -56,82 +56,92 @@ Việc truy cập các chức năng quản trị phụ thuộc vào tài khoản
 | Authentication & Database | Supabase |
 | AI integration | Google Gemini API |
 | Workflow automation | n8n |
-| Public website hosting | Netlify |
-| Public access to local n8n | Cloudflare Quick Tunnel |
-| Local operating environment | Windows PowerShell |
+| Website hosting hiện tại | Netlify |
+| Public access đến n8n | Cloudflare Quick Tunnel |
+| Môi trường chạy n8n | Windows, PowerShell |
 | Package management | npm |
 
-### 3.2. Kiến trúc vận hành
+### 3.2. Vai trò của từng thành phần
 
-Hệ thống sử dụng website, dịch vụ quản lý dữ liệu và workflow automation phối hợp với nhau.
-
-**Website:**
+**Website (Netlify)**
 
 - Frontend được xây dựng bằng React và Vite.
-- Mã nguồn được build thành bản production trước khi triển khai.
-- Website hiện được truy cập qua Netlify tại `https://giaothoivn.netlify.app`.
+- Mã nguồn được build thành thư mục `dist/` trước khi triển khai.
+- Website hiện được truy cập tại `https://giaothoivn.netlify.app`.
 
-**Supabase:**
+**Supabase**
 
-- Quản lý xác thực tài khoản.
-- Hỗ trợ kiểm tra vai trò và phân quyền người dùng.
-- Cung cấp kết nối đến dữ liệu của ứng dụng.
+- Xác thực tài khoản người dùng.
+- Lưu trữ và truy vấn dữ liệu ứng dụng.
+- Quản lý bảng vai trò `user_roles`, phục vụ kiểm tra quyền Admin, Creator, Approver và Publisher.
 
-**n8n:**
+**API trung gian**
 
-- Chạy trực tiếp trên máy tính Windows, không sử dụng Docker trong cấu hình hiện tại.
-- Được khởi động thông qua PowerShell.
-- Tiếp nhận và xử lý các yêu cầu webhook từ những chức năng được tích hợp trên website.
+- Các endpoint được tổ chức trong thư mục `api/`.
+- Tiếp nhận yêu cầu từ frontend, xác thực phiên Supabase và kiểm tra quyền người dùng.
+- Gửi yêu cầu đến webhook n8n.
+- Giữ `N8N_WEBHOOK_KEY` ở phía server thay vì đưa khóa này vào frontend.
 
-**Cloudflare Quick Tunnel:**
+**n8n**
 
-- Tạo đường dẫn HTTPS công khai đến dịch vụ n8n đang chạy trên máy tính cá nhân.
-- Cho phép website truy cập webhook của n8n thay vì gọi trực tiếp địa chỉ `localhost`.
-- Sử dụng địa chỉ dạng `https://<tên-tunnel>.trycloudflare.com`.
-- Đây là Quick Tunnel nên địa chỉ có thể thay đổi khi khởi động lại tunnel.
+- Chạy trực tiếp trên máy tính Windows trong cấu hình hiện tại.
+- Được khởi động bằng PowerShell.
+- Tiếp nhận webhook và thực thi các workflow tự động hóa.
 
-**PowerShell:**
+**Cloudflare Quick Tunnel**
 
-- Sử dụng để khởi động n8n và Cloudflare Tunnel.
-- Duy trì các tiến trình cần thiết trong thời gian hệ thống hoạt động.
+- Tạo URL HTTPS công khai chuyển tiếp yêu cầu đến n8n đang chạy tại `localhost:5678`.
+- Cho phép API trung gian kết nối đến n8n từ bên ngoài mạng nội bộ.
+- Quick Tunnel có thể tạo URL mới sau khi khởi động lại; khi đó cần cập nhật biến môi trường `N8N_BASE_URL`.
 
-### 3.3. Luồng kết nối tổng quát
+**PowerShell**
+
+- Dùng để khởi động n8n và Cloudflare Tunnel.
+- Duy trì các tiến trình trong thời gian cần vận hành workflow.
+
+### 3.3. Luồng kết nối
 
 ```text
-Khách hàng / Người quản trị
-          |
-          v
-     Website GIAO THỜI
-        (Netlify)
-          |
-          |--------------------> Supabase
-          |                       |
-          |                       v
-          |                Authentication
-          |                Database / Roles
-          |
-          v
-   Cloudflare Quick Tunnel
-          |
-          v
-     n8n trên máy Windows
-       (localhost:5678)
-          |
-          v
-     Workflow automation
-          |
-          v
-   Các dịch vụ bên ngoài
-   theo từng workflow
+Người dùng / Admin
+        |
+        v
+Website GIAO THỜI (Netlify)
+        |
+        +----------------------> Supabase
+        |                         |
+        |                         v
+        |                 Authentication
+        |                 Database / Roles
+        |
+        v
+API trung gian (Node.js)
+        |
+        v
+Cloudflare Quick Tunnel
+        |
+        v
+n8n trên máy Windows
+(localhost:5678)
+        |
+        v
+Các workflow tự động hóa
+        |
+        v
+Dịch vụ bên ngoài theo từng workflow
 ```
 
-Lưu ý: Cloudflare Tunnel chỉ đóng vai trò tạo kết nối từ Internet đến dịch vụ n8n đang chạy cục bộ. Nó không thay thế Netlify để lưu trữ website và cũng không phải nơi chạy n8n trong cấu hình hiện tại.
+**Lưu ý về triển khai API:** Frontend đang được host trên Netlify, nhưng các file trong `api/` hiện được viết theo dạng Node.js handler sử dụng `req`, `res` và `process.env`. Cấu trúc này không tự động trở thành Netlify Functions chỉ vì thư mục có tên `api`. Repository hiện chưa có cấu hình Netlify Functions được xác nhận. Vì vậy, cần triển khai API trên một môi trường tương thích hoặc chuyển đổi sang định dạng Netlify Functions trước khi khẳng định toàn bộ chức năng Admin và proxy n8n hoạt động trên production.
+
+Cloudflare Quick Tunnel chỉ tạo kết nối đến n8n; không thay thế nền tảng hosting frontend hoặc môi trường chạy API.
 
 ## 4. Cấu trúc thư mục
 
 ```text
 BUILD_WEBSITE/
-├── api/                    # Các API endpoint và xử lý phía server
+├── api/
+│   ├── _lib/               # Hàm xác thực và tiện ích dùng chung phía server
+│   ├── admin/              # API quản trị, ví dụ khôi phục mật khẩu
+│   └── n8n/                # API trung gian kết nối các workflow n8n
 ├── docs/                   # Tài liệu và kiến thức thương hiệu
 ├── public/                 # Tài nguyên tĩnh, hình ảnh
 ├── src/
@@ -149,7 +159,7 @@ BUILD_WEBSITE/
 │   ├── App.tsx             # Thành phần ứng dụng chính
 │   ├── main.tsx            # Entry point
 │   └── index.css           # CSS toàn cục
-├── .env.example            # Mẫu biến môi trường
+├── .env.example            # Mẫu biến môi trường (hiện chưa liệt kê đầy đủ)
 ├── index.html              # HTML entry point
 ├── package.json            # Dependencies và scripts
 ├── tsconfig.json           # Cấu hình TypeScript
@@ -176,24 +186,31 @@ npm install
 
 ### 5.3. Cấu hình biến môi trường
 
-Tạo file `.env` tại thư mục gốc dựa trên `.env.example`.
+Tạo file `.env` tại thư mục gốc để chạy local. Không sử dụng file này để lưu hoặc chia sẻ thông tin bí mật trong repository.
 
-Các biến môi trường cần được cấu hình theo những dịch vụ mà ứng dụng sử dụng:
+Các biến được mã nguồn tham chiếu gồm:
 
-| Biến | Mục đích |
+| Biến | Phạm vi / mục đích |
 |---|---|
-| `VITE_SUPABASE_URL` | Địa chỉ dự án Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Public/publishable key của Supabase |
-| `GEMINI_API_KEY` | Khóa truy cập Gemini API |
-| `APP_URL` | URL triển khai ứng dụng |
-| `N8N_BASE_URL` | Địa chỉ truy cập n8n qua Cloudflare Tunnel |
-| `N8N_WEBHOOK_KEY` | Khóa xác thực kết nối webhook n8n |
+| `VITE_SUPABASE_URL` | Frontend: URL dự án Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend: publishable key dùng để khởi tạo Supabase client |
+| `SUPABASE_URL` | Server: URL Supabase; API cũng có thể dùng `VITE_SUPABASE_URL` làm giá trị dự phòng |
+| `SUPABASE_PUBLISHABLE_KEY` | Server: publishable key dùng để xác thực phiên và truy vấn vai trò; có thể dùng `VITE_SUPABASE_PUBLISHABLE_KEY` làm giá trị dự phòng |
+| `SUPABASE_SECRET_KEY` | Server: khóa bí mật có quyền quản trị Supabase, chỉ dùng cho API đặt lại mật khẩu |
+| `ADMIN_PASSWORD_RESET_EMAIL` | Server: email tài khoản Admin được phép sử dụng chức năng đặt lại mật khẩu đặc biệt |
+| `ADMIN_PASSWORD_RESET_TOKEN` | Server: token xác thực riêng cho chức năng đặt lại mật khẩu; mã nguồn yêu cầu tối thiểu 32 ký tự |
+| `N8N_BASE_URL` | Server: URL Cloudflare Tunnel đang chuyển tiếp đến n8n |
+| `N8N_WEBHOOK_KEY` | Server: khóa gửi kèm request đến webhook n8n |
+| `GEMINI_API_KEY` | Khóa Gemini; có trong `.env.example`, cần kiểm tra chức năng sử dụng trước khi cấu hình production |
+| `APP_URL` | URL ứng dụng; có trong `.env.example`, cần đối chiếu nơi sử dụng khi triển khai |
 
-Không phải mọi biến đều được sử dụng ở cùng một môi trường. Những biến cần thiết cho xử lý phía server phải được cấu hình trong môi trường chạy API tương ứng; không đưa private key hoặc thông tin xác thực nhạy cảm vào frontend.
+**Lưu ý bảo mật:**
 
-Đối với `N8N_BASE_URL`, cần cập nhật địa chỉ Quick Tunnel hiện đang hoạt động nếu URL thay đổi sau khi khởi động lại Cloudflare Tunnel.
-
-Không commit file `.env`, private key, mật khẩu hoặc thông tin xác thực lên repository công khai.
+- Các biến có tiền tố `VITE_` được đưa vào bundle frontend khi build. Chỉ đặt ở đó các giá trị được phép công khai, chẳng hạn Supabase URL và publishable key.
+- Không đặt `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD_RESET_TOKEN` hoặc `N8N_WEBHOOK_KEY` trong biến `VITE_` hay mã frontend.
+- Các biến server phải được khai báo trong môi trường chạy API, không chỉ trong cấu hình build frontend.
+- Không commit file `.env`, private key, mật khẩu hoặc token lên repository.
+- File `.env.example` hiện chưa phản ánh đầy đủ các biến mà mã nguồn API yêu cầu; cần bổ sung mẫu tên biến và mô tả, tuyệt đối không điền giá trị bí mật thật.
 
 ### 5.4. Chạy website ở môi trường phát triển
 
@@ -215,11 +232,7 @@ http://localhost:3000
 npm run build
 ```
 
-Thư mục kết quả được tạo tại:
-
-```text
-dist/
-```
+Thư mục kết quả được tạo tại `dist/`.
 
 ### 5.6. Xem thử bản build
 
@@ -237,27 +250,38 @@ npm run lint
 
 Lệnh này chạy TypeScript compiler với chế độ kiểm tra kiểu dữ liệu, không thực hiện build production.
 
-## 6. Triển khai và vận hành hệ thống
+## 6. Triển khai và vận hành
 
-### 6.1. Triển khai website trên Netlify
+### 6.1. Triển khai frontend trên Netlify
 
-Website hiện được triển khai trên Netlify.
-
-Đối với repository tổng hợp, nếu triển khai trực tiếp từ repository này, cần cấu hình đúng thư mục dự án:
+Website hiện được truy cập qua Netlify. Khi triển khai repository tổng hợp, cấu hình build dự kiến là:
 
 - **Base directory:** `01_WEBSITE/BUILD_WEBSITE`
 - **Build command:** `npm run build`
 - **Publish directory:** `dist`
 
-Các biến môi trường cần thiết phải được khai báo trong phần cấu hình của nền tảng triển khai.
+Cần khai báo các biến frontend cần thiết trong phần Environment Variables của Netlify và chạy deploy lại sau khi thay đổi biến.
 
-Sau khi cập nhật mã nguồn, cần thực hiện build và kiểm tra lại website trên đường dẫn production.
+Cấu hình trên chỉ mô tả việc build và xuất bản frontend. Nó không tự triển khai các API trong thư mục `api/`.
 
-### 6.2. Khởi động n8n bằng PowerShell
+### 6.2. Triển khai API
 
-n8n được chạy trực tiếp trên máy Windows.
+Các API hiện có bao gồm:
 
-Mở một cửa sổ PowerShell và thực hiện:
+- `/api/calendar`: kết nối các webhook lịch nội dung.
+- `/api/n8n/[route]`: proxy các workflow như dashboard, AI assistant, content studio, campaign planner, analytics, content library, content approval và automation.
+- `/api/n8n/giaothoi-dashboard`: endpoint dashboard.
+- `/api/admin/reset-password`: endpoint đặt lại mật khẩu Admin theo cơ chế xác thực riêng.
+
+Các handler sử dụng giao diện request/response kiểu Node.js. Khi triển khai, cần chọn nền tảng tương thích với cấu trúc handler này hoặc chuyển đổi chúng sang định dạng functions mà nền tảng yêu cầu.
+
+Không coi các endpoint trên đã hoạt động production chỉ dựa vào việc frontend build thành công. Cần kiểm tra từng endpoint sau khi cấu hình môi trường chạy API.
+
+### 6.3. Khởi động n8n bằng PowerShell
+
+n8n chạy trực tiếp trên máy Windows trong cấu hình hiện tại.
+
+Mở một cửa sổ PowerShell và chạy:
 
 ```powershell
 n8n.cmd start
@@ -269,9 +293,9 @@ Sau khi khởi động, giao diện n8n được truy cập tại:
 http://localhost:5678
 ```
 
-Giữ cửa sổ PowerShell này mở trong thời gian sử dụng n8n.
+Giữ cửa sổ PowerShell này mở trong thời gian cần sử dụng workflow.
 
-### 6.3. Khởi động Cloudflare Quick Tunnel
+### 6.4. Khởi động Cloudflare Quick Tunnel
 
 Mở một cửa sổ PowerShell thứ hai và chạy:
 
@@ -279,41 +303,38 @@ Mở một cửa sổ PowerShell thứ hai và chạy:
 cloudflared tunnel --url http://localhost:5678
 ```
 
-Nếu sử dụng file thực thi đã tải về trong thư mục Downloads, có thể chạy:
+Nếu sử dụng file thực thi đã tải về trong thư mục hiện tại, chạy theo đúng tên file đã tải, ví dụ:
 
 ```powershell
 .\cloudflared-windows-amd64.exe tunnel --url http://localhost:5678
 ```
 
-Sau khi khởi động thành công, Cloudflare sẽ cung cấp một URL HTTPS có dạng:
+Sau khi khởi động thành công, Cloudflare cung cấp URL HTTPS có dạng:
 
 ```text
-https://<tên-tunnel>.trycloudflare.com
+https://<ten-tunnel>.trycloudflare.com
 ```
 
-Đây là URL công khai để kết nối đến dịch vụ n8n đang chạy cục bộ.
+Cập nhật URL này vào biến môi trường server `N8N_BASE_URL` (không thêm đường dẫn webhook cụ thể vào biến nếu mã nguồn tự nối đường dẫn).
 
 Cần lưu ý:
 
 - Giữ cả hai cửa sổ PowerShell chạy n8n và Cloudflare Tunnel mở.
 - Không tắt tiến trình n8n hoặc tunnel khi cần sử dụng workflow.
 - Quick Tunnel có thể tạo URL mới sau khi khởi động lại.
-- Khi URL thay đổi, cần cập nhật địa chỉ kết nối trong cấu hình tương ứng của ứng dụng.
-- Không đưa webhook key hoặc thông tin xác thực vào tài liệu công khai.
+- Khi URL thay đổi, cập nhật `N8N_BASE_URL` trong môi trường chạy API và khởi động lại hoặc redeploy API nếu cần.
+- Không công khai webhook key hoặc thông tin xác thực.
 
-### 6.4. Kết nối website với n8n
-
-Website sử dụng địa chỉ HTTPS do Cloudflare Tunnel cung cấp để gửi yêu cầu đến webhook n8n.
-
-Luồng xử lý tổng quát:
+### 6.5. Luồng xử lý webhook
 
 1. Người dùng thực hiện thao tác trên website.
-2. Website gửi dữ liệu đến webhook tương ứng.
-3. Cloudflare Tunnel chuyển tiếp yêu cầu đến n8n trên máy Windows.
-4. n8n tiếp nhận dữ liệu và chạy workflow đã cấu hình.
-5. Workflow xử lý và kết nối với các dịch vụ bên ngoài theo từng chức năng.
+2. Frontend gửi request đến API trung gian.
+3. API kiểm tra phiên Supabase và vai trò người dùng.
+4. API gửi request đến webhook n8n thông qua Cloudflare Tunnel, kèm header xác thực `X-GIAO-THOI-KEY`.
+5. n8n thực thi workflow tương ứng và trả kết quả về API.
+6. API trả kết quả cho frontend.
 
-Khi kiểm thử webhook, cần sử dụng đúng phương thức HTTP, đường dẫn webhook và trạng thái workflow tương ứng. Không mặc định webhook chỉ cần mở URL bằng trình duyệt là có thể hoạt động.
+Cần bảo đảm workflow n8n đã được kích hoạt và đường dẫn webhook, phương thức HTTP, header xác thực khớp với cấu hình trong mã nguồn.
 
 ## 7. Nguồn mã nguồn và tài liệu
 
@@ -339,11 +360,11 @@ Các nội dung cần kiểm thử để xác nhận khả năng vận hành đ�
 
 - Cài đặt dependencies và build production.
 - Kiểm tra các trang giao diện dành cho khách hàng.
-- Kiểm tra đăng nhập và khôi phục mật khẩu Admin.
+- Kiểm tra đăng nhập, khôi phục mật khẩu và cập nhật mật khẩu Admin.
 - Kiểm tra phân quyền Admin, Creator, Approver và Publisher.
-- Kiểm tra các API phía server.
+- Kiểm tra API trung gian và môi trường triển khai API.
 - Kiểm tra kết nối Supabase.
-- Kiểm tra kết nối website với webhook n8n qua Cloudflare Tunnel.
+- Kiểm tra kết nối API với webhook n8n qua Cloudflare Tunnel.
 - Kiểm tra các workflow và dịch vụ bên ngoài có liên quan.
 
-Build thành công không đồng nghĩa toàn bộ chức năng, API và tích hợp bên ngoài đã hoạt động. Chỉ cập nhật trạng thái hoàn thành sau khi thực hiện kiểm thử tương ứng.
+Build frontend thành công không đồng nghĩa API, xác thực Admin và các workflow bên ngoài đã hoạt động. Chỉ cập nhật trạng thái hoàn thành sau khi thực hiện kiểm thử tương ứng.
