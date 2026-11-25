@@ -174,3 +174,38 @@ A reference file being present in Git does not by itself prove that a runtime wo
 - [ ] Inspect the Google Analytics Tool schema and confirm supported Metrics, Dimensions, date behavior and Property ID.
 - [ ] Run test prompts for GA4 aggregation, unsupported metrics, missing product facts, unavailable Skills, Facebook mixed media and action-approval boundaries.
 - [ ] Run the three n8n workflow test matrices against deployed workflows.
+
+
+## Detailed Builder Tool configuration supplied by user (25/11/2026)
+
+The user supplied endpoint descriptions and HTTP method/configuration for the following Tools. This is configuration evidence, not successful execution evidence.
+
+| Tool purpose | Method / endpoint | Authentication | Notes |
+|---|---|---|---|
+| Product catalogue | GET `raw.githubusercontent.com/.../src/data/products.ts` on `feature/ga4-ai-agent` | None | Declared to return product source code; inspect actual returned data before making product claims |
+| GA4 report | POST `analyticsdata.googleapis.com/v1beta/properties/557199346:runReport` | OAuth2 API credential “GA4 Data API” | Property ID fixed as 557199346 |
+| GA4 request body builder | Description supplied; exact endpoint/tool name not supplied | Not specified | Constructs dateRanges, metrics, dimensions and dimensionFilter request body |
+| Brand Knowledge Base | GET `raw.githubusercontent.com/.../docs/brand-knowledge.md` on `feature/ga4-ai-agent` | None | Declared source for brand positioning, audience, identity, tone and marketing direction |
+| Content Strategy Skill fetcher | GET GitHub `.../skills/content-strategy/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
+| Social Content Skill fetcher | GET GitHub `.../skills/social-content/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
+| Copywriting Skill fetcher | GET GitHub `.../skills/copywriting/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
+| Analytics Tracking Skill fetcher | GET GitHub `.../skills/analytics-tracking/SKILL.md` | None | HTTP Request fetcher, not a native Builder Skill attachment |
+
+### Interpretation and gaps
+
+- The Builder screenshot shows the native Skills panel empty. Four Skill documents are nevertheless retrievable through separate HTTP Request tools. These are two different mechanisms and must not be conflated.
+- The user-provided list does not show a Campaign Planning Skill fetcher, Marketing Ideas Skill fetcher, or reference-document fetchers. Do not assume those endpoints exist based on repository files alone.
+- The GA4 tool description lists a core set of 3 metrics/2 dimensions and also suggests an expanded set. The expanded fields must be validated against the GA4 Data API metadata/schema and valid combinations before use; descriptions alone do not prove every combination is supported.
+- The GA4 request-body builder description and the GA4 report endpoint are separate responsibilities: one prepares the body; the other executes the report. Confirm the actual tool wiring so the generated body is passed to the POST request.
+- Product and Brand GET endpoints have no authentication in the supplied configuration. Confirm that their raw GitHub URLs remain publicly accessible and that the expected source paths/branch are correct.
+- The supplied excerpts do not reveal tool names, node ordering, response transformations, error handling, or whether “Require approval” is enabled. Do not infer these settings.
+- The total count of 16 HTTP Request tools is not fully inventoried by the excerpts in this message; this table records only the tools whose descriptions/configurations were supplied.
+
+### Next verification items
+
+- [ ] Obtain remaining HTTP Request descriptions/configurations to map all 16 tools.
+- [ ] Confirm GA4 metadata support and test representative metric/dimension combinations.
+- [ ] Confirm request-body builder output is wired to the GA4 POST body.
+- [ ] Execute Product Catalogue and Brand Knowledge GET requests and inspect response shape.
+- [ ] Execute each of the four Skill fetchers and confirm the returned Markdown is passed into the agent context.
+- [ ] Confirm approval settings for each tool and test approval behavior.
