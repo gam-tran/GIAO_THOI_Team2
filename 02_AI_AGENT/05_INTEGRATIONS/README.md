@@ -1,21 +1,27 @@
 # Integrations
 
-Tài liệu tích hợp được cập nhật dựa trên mã nguồn website và 19 workflow n8n JSON exports.
+Thư mục này mô tả các dịch vụ và giao thức kết nối với website, Admin và hệ thống AI Marketing của GIAO THỜI.
 
 ## Tài liệu
-- [n8n Integration Architecture](./n8n-integration-architecture.md): GitHub raw, Gemini, GA4, n8n REST API, Data Tables, Facebook Graph API và Supabase Storage.
-- [Security and Reliability Review](./n8n-security-reliability-review.md): webhook authentication, quyền automation, duplicate endpoint và consistency GA4.
 
-## Thành phần quan sát được
-| Thành phần | Vai trò |
+- [n8n Integration Architecture](./n8n-integration-architecture.md) – kiến trúc kết nối GitHub raw, Gemini, GA4, n8n REST API, Data Tables, Facebook Graph API và Supabase Storage.
+- [Security and Reliability Review](./n8n-security-reliability-review.md) – đánh giá xác thực webhook, quyền automation, endpoint trùng và tính nhất quán của GA4.
+
+## Thành phần tích hợp
+
+| Thành phần | Vai trò trong kiến trúc |
 |---|---|
-| GitHub raw | Nạp Product Data và Brand Knowledge |
-| Google Gemini | AI Assistant, Content Studio, Campaign Planner, Marketing Insights |
-| Google Analytics Data API | Báo cáo GA4 qua runReport |
-| n8n REST API | Quản lý workflows, executions và schedules |
-| n8n Data Tables | Content Calendar và Content Library |
-| Facebook Graph API | Đăng bài text, album ảnh, video |
-| Supabase Storage | Signed URL cho media |
+| GitHub Raw Content | Cung cấp Product Data, Brand Knowledge, Skills và References qua các endpoint đọc nội dung |
+| Google Gemini | Sinh phản hồi AI, nội dung Marketing và kế hoạch chiến dịch trong các workflow tương ứng |
+| Google Analytics Data API | Truy vấn dữ liệu GA4 thông qua phương thức runReport |
+| n8n REST API | Quản lý workflow, executions và schedules theo quyền được cấp |
+| n8n Data Tables | Lưu trữ dữ liệu phục vụ Content Calendar và Content Library |
+| Facebook Graph API | Tích hợp các thao tác đăng nội dung text, album ảnh hoặc video |
+| Supabase Storage | Lưu trữ media và cung cấp signed URL theo cấu hình |
 
-## Bảo mật và xác minh
-Export chỉ cho thấy tên credential được chọn, không chứa secret value. Không commit API keys, access tokens, refresh tokens, webhook secrets hoặc service-role keys. Không coi việc có node, dependency, credential reference hoặc tài liệu là bằng chứng tích hợp đã chạy thành công; cần kiểm tra quyền, cấu hình triển khai và execution logs.
+## Nguyên tắc bảo mật và vận hành
+
+- Credentials được tham chiếu trong workflow không đồng nghĩa secret value được lưu trong export.
+- Không đưa API key, access token, refresh token, webhook secret hoặc service-role key vào repository.
+- Phân biệt cấu hình node với quyền truy cập thực tế và kết quả thực thi.
+- Các thao tác có tác động đến khách hàng, nội dung công khai hoặc ngân sách cần được kiểm soát theo quyền và quy trình phê duyệt.
