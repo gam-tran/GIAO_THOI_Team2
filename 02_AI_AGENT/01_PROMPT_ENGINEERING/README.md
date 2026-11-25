@@ -1,36 +1,53 @@
 # Prompt Engineering
 
-Thư mục này lưu các prompt và cấu trúc đầu vào có nguồn gốc kiểm chứng được hoặc được đánh dấu rõ là bản đề xuất trong quá trình phát triển GIAO THỜI AI.
+Thư mục này lưu prompt theo từng lớp thực thi của GIAO THỜI AI, gồm prompt cấp Agent, prompt runtime trong n8n, cấu trúc đầu vào và bộ kiểm thử.
 
-## Prompt và tài liệu cấu hình
+## 1. Central Agent Instructions
 
 | Tài liệu | Nội dung | Trạng thái |
 |---|---|---|
-| [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md) | Bản Instructions chuẩn hóa đề xuất cho GIAO THỜI – Marketing AI Agent | Draft – cần kiểm thử trong Builder |
-| [frontend-suggested-prompts.md](./frontend-suggested-prompts.md) | 4 prompt gợi ý hiển thị trong giao diện Marketing AI Assistant | Đã đối chiếu mã nguồn |
-| [workflow-input-templates.md](./workflow-input-templates.md) | Các trường brief, giá trị mặc định và payload gửi từ Automation Center tới Content Studio/Campaign Planner | Đã đối chiếu mã nguồn |
+| [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md) | Bản Instructions chuẩn hóa đề xuất cho GIAO THỜI – Marketing AI Agent | Draft – cần đối chiếu Builder và kiểm thử |
 
-## Chưa xác minh được
+## 2. n8n runtime prompts — trích xuất từ workflow exports
 
-Chưa có bản export workflow n8n hoặc cấu hình node AI được cung cấp trong repository để xác minh:
-- System Prompt thực tế của webhook `giaothoi-ai-assistant`.
-- Prompt/template nằm bên trong các workflow Content Studio và Campaign Planner.
-- Model, memory, tools và cơ chế nạp Marketing Skills tại runtime.
+| Tài liệu | Workflow / node | Trạng thái |
+|---|---|---|
+| [n8n-ai-assistant-runtime-prompt.md](./n8n-ai-assistant-runtime-prompt.md) | AI Assistant API / Build Assistant Prompt | Đã trích xuất tĩnh từ JSON |
+| [n8n-campaign-planner-runtime-prompt.md](./n8n-campaign-planner-runtime-prompt.md) | Campaign Planner API / Build Campaign Prompt | Đã trích xuất tĩnh từ JSON |
+| [n8n-content-studio-runtime-prompt.md](./n8n-content-studio-runtime-prompt.md) | Content Studio API / Build Marketing Prompt | Đã trích xuất tĩnh từ JSON |
+| [n8n-runtime-prompt-audit.md](./n8n-runtime-prompt-audit.md) | So sánh 3 workflow, phát hiện và test matrix | Static review hoàn tất; runtime tests pending |
 
-Bản Instructions trong thư mục này được chuẩn hóa từ nội dung prompt người dùng cung cấp và ảnh chụp Agent Builder. Nó là bản tài liệu hóa/đề xuất, không được mặc định là prompt production đang chạy.
+Các prompt runtime được xây dựng trong Code node rồi truyền vào LLM node qua `$json.prompt`. Chúng là các prompt riêng theo tác vụ, không phải một System Prompt duy nhất dùng chung.
 
-## Cách bổ sung prompt runtime
+## 3. Frontend prompts and input contracts
 
-Khi có quyền truy cập workflow n8n hoặc bản export cấu hình Agent Builder, cần trích xuất nội dung prompt từ đúng workflow/node và ghi kèm:
-1. Tên workflow/Agent và node.
-2. Loại prompt (System / Developer / User / template).
-3. Nội dung đầy đủ sau khi loại bỏ credential, token, API key và dữ liệu cá nhân.
-4. Biến đầu vào và cách mapping dữ liệu.
-5. Model, Tools, Skills và cấu hình liên quan nếu được xác minh.
-6. Ngày trích xuất, phiên bản và trạng thái (draft/test/production).
+| Tài liệu | Nội dung | Trạng thái |
+|---|---|---|
+| [frontend-suggested-prompts.md](./frontend-suggested-prompts.md) | Prompt gợi ý hiển thị trong giao diện Marketing AI Assistant | Đã đối chiếu mã nguồn |
+| [workflow-input-templates.md](./workflow-input-templates.md) | Brief, giá trị mặc định và payload gửi từ Automation Center tới Content Studio/Campaign Planner | Đã đối chiếu mã nguồn |
 
-## Mã nguồn đối chiếu
+## 4. Kiến trúc phân lớp đề xuất
+
+- **Central Agent Instructions:** danh tính, bối cảnh thương hiệu, nguyên tắc chung, giới hạn quyền, phân loại tác vụ và định tuyến.
+- **Workflow-specific prompts:** nhiệm vụ, biến đầu vào, định dạng đầu ra và quy tắc riêng của từng workflow.
+- **Skills/references:** phương pháp Marketing và kiến thức chuyên sâu có thể tái sử dụng.
+
+Không gộp toàn bộ prompt tác vụ vào Central Instructions nếu điều đó tạo trùng lặp hoặc khiến biến đầu vào của workflow bị mất.
+
+## 5. Việc còn phải xác minh
+
+- Cấu hình đang triển khai thực tế trên n8n và execution logs.
+- Model/version thực tế của AI Assistant và Campaign Planner (JSON export không khai báo rõ modelName).
+- Skills/Tools đang được gắn thực tế trong Agent Builder và cách chúng liên hệ với các workflow n8n.
+- Kiểm thử end-to-end theo test matrix trong `n8n-runtime-prompt-audit.md`.
+- Xác nhận các quy tắc vận hành hiện hành, bao gồm giới hạn Facebook không gộp ảnh và video trong cùng một bài đăng.
+
+## 6. Nguồn mã nguồn đối chiếu
 
 - [AI Assistant frontend](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/src/admin/pages/AIAssistant.tsx)
 - [Automation Center frontend](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/src/admin/pages/AutomationCenter.tsx)
 - [n8n API proxy](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/api/n8n/%5Broute%5D.ts)
+
+## 7. Phạm vi xác minh
+
+Tài liệu runtime prompt phản ánh cấu hình có trong ba JSON exports được cung cấp. Cờ `active: true` trong file export không đủ để kết luận workflow hiện đang hoạt động hoặc chạy thành công. Không lưu credential, token, webhook secret hay dữ liệu cá nhân trong repository.
