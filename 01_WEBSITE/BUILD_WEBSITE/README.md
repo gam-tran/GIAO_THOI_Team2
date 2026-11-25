@@ -131,7 +131,7 @@ Các workflow tự động hóa
 Dịch vụ bên ngoài theo từng workflow
 ```
 
-**Lưu ý về triển khai API:** Frontend đang được host trên Netlify, nhưng các file trong `api/` hiện được viết theo dạng Node.js handler sử dụng `req`, `res` và `process.env`. Cấu trúc này không tự động trở thành Netlify Functions chỉ vì thư mục có tên `api`. Repository hiện chưa có cấu hình Netlify Functions được xác nhận. Vì vậy, cần triển khai API trên một môi trường tương thích hoặc chuyển đổi sang định dạng Netlify Functions trước khi khẳng định toàn bộ chức năng Admin và proxy n8n hoạt động trên production.
+**Trạng thái API:** Các handler gốc trong `api/` sử dụng kiểu Node.js request/response (`req`, `res`). Để triển khai cùng website trên Netlify, repository đã bổ sung các handler tương thích Netlify Functions trong `netlify/functions/` và cấu hình rewrite trong `netlify.toml`. Đây là cấu hình có trong mã nguồn hiện tại; cần deploy bản cập nhật lên Netlify và kiểm thử các endpoint thực tế trước khi xác nhận API đang hoạt động trên production.
 
 Cloudflare Quick Tunnel chỉ tạo kết nối đến n8n; không thay thế nền tảng hosting frontend hoặc môi trường chạy API.
 
@@ -214,9 +214,9 @@ Các biến được mã nguồn tham chiếu gồm:
 
 - Các biến có tiền tố `VITE_` được đưa vào bundle frontend khi build. Chỉ đặt ở đó các giá trị được phép công khai, chẳng hạn Supabase URL và publishable key.
 - Không đặt `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD_RESET_TOKEN` hoặc `N8N_WEBHOOK_KEY` trong biến `VITE_` hay mã frontend.
-- Các biến server phải được khai báo trong Netlify Environment Variables với scope bao gồm **Functions** (và Build nếu ứng dụng cần ở thời điểm build), không chỉ trong cấu hình local.
+- Khi deploy trên Netlify, khai báo biến server trong Netlify Environment Variables với scope bao gồm **Functions**. Chỉ bật thêm scope **Build** nếu quá trình build thực sự cần biến đó.
 - Không commit file `.env`, private key, mật khẩu hoặc token lên repository.
-- File `.env.example` hiện chưa phản ánh đầy đủ các biến mà mã nguồn API yêu cầu; cần bổ sung mẫu tên biến và mô tả, tuyệt đối không điền giá trị bí mật thật.
+- File `.env.example` cung cấp tên biến và giá trị placeholder để tham khảo. Cần đối chiếu với môi trường thực tế khi cấu hình; tuyệt đối không thay placeholder bằng secret thật rồi commit lên repository.
 
 ### 5.4. Chạy website ở môi trường phát triển
 
@@ -258,9 +258,9 @@ Lệnh này chạy TypeScript compiler với chế độ kiểm tra kiểu dữ 
 
 ## 6. Triển khai và vận hành
 
-### 6.1. Triển khai frontend trên Netlify
+### 6.1. Triển khai website trên Netlify
 
-Website hiện được truy cập qua Netlify. Khi triển khai repository tổng hợp, cấu hình build dự kiến là:
+Website hiện có địa chỉ truy cập Netlify. Khi triển khai từ repository tổng hợp, cấu hình build dự kiến là:
 
 - **Base directory:** `01_WEBSITE/BUILD_WEBSITE`
 - **Build command:** `npm run build`
@@ -268,11 +268,11 @@ Website hiện được truy cập qua Netlify. Khi triển khai repository tổ
 
 Cần khai báo các biến frontend cần thiết trong phần Environment Variables của Netlify và chạy deploy lại sau khi thay đổi biến.
 
-Cấu hình trên chỉ mô tả việc build và xuất bản frontend. Nó không tự triển khai các API trong thư mục `api/`.
+Cấu hình build xuất bản frontend từ `dist/`. Việc chạy API được khai báo riêng thông qua Netlify Functions trong `netlify/functions/` và các rewrite trong `netlify.toml`; cần kiểm tra deploy log để xác nhận Netlify đã nhận đúng cấu hình.
 
 ### 6.2. Triển khai API bằng Netlify Functions
 
-Các API đã có bản triển khai tương thích Netlify Functions trong `netlify/functions/`:
+Trong mã nguồn hiện tại, các API có bản triển khai tương thích Netlify Functions trong `netlify/functions/`:
 
 - `/api/calendar` → Function `calendar`: kết nối các webhook lịch nội dung.
 - `/api/n8n/*` → Function `n8n-proxy`: proxy dashboard, AI assistant, content studio, campaign planner, analytics, content library, content approval và automation.
@@ -375,7 +375,7 @@ Các nội dung cần kiểm thử để xác nhận khả năng vận hành đ�
 - Kiểm tra các trang giao diện dành cho khách hàng.
 - Kiểm tra đăng nhập, khôi phục mật khẩu và cập nhật mật khẩu Admin.
 - Kiểm tra phân quyền Admin, Creator, Approver và Publisher.
-- Kiểm tra các Netlify Functions và rewrite API.
+- Kiểm tra các Netlify Functions và rewrite API sau khi deploy.
 - Kiểm tra kết nối Supabase.
 - Kiểm tra kết nối API với webhook n8n qua Cloudflare Tunnel.
 - Kiểm tra các workflow và dịch vụ bên ngoài có liên quan.
