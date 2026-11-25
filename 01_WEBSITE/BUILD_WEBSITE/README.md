@@ -75,12 +75,13 @@ Việc truy cập các chức năng quản trị phụ thuộc vào tài khoản
 - Lưu trữ và truy vấn dữ liệu ứng dụng.
 - Quản lý bảng vai trò `user_roles`, phục vụ kiểm tra quyền Admin, Creator, Approver và Publisher.
 
-**API trung gian**
+**API trung gian (Netlify Functions)**
 
-- Các endpoint được tổ chức trong thư mục `api/`.
-- Tiếp nhận yêu cầu từ frontend, xác thực phiên Supabase và kiểm tra quyền người dùng.
-- Gửi yêu cầu đến webhook n8n.
-- Giữ `N8N_WEBHOOK_KEY` ở phía server thay vì đưa khóa này vào frontend.
+- Các API tương thích Netlify Functions được triển khai trong `netlify/functions/`.
+- Xác thực phiên Supabase và kiểm tra vai trò người dùng trước khi xử lý request.
+- Chuyển tiếp các yêu cầu hợp lệ đến webhook n8n.
+- Giữ `N8N_WEBHOOK_KEY`, `SUPABASE_SECRET_KEY` và token đặt lại mật khẩu ở phía server.
+- Các URL cũ dạng `/api/...` được giữ thông qua rewrite trong `netlify.toml` để hạn chế thay đổi frontend.
 
 **n8n**
 
@@ -114,7 +115,7 @@ Website GIAO THỜI (Netlify)
         |                 Database / Roles
         |
         v
-API trung gian (Node.js)
+Netlify Functions (API Node.js)
         |
         v
 Cloudflare Quick Tunnel
@@ -138,10 +139,14 @@ Cloudflare Quick Tunnel chỉ tạo kết nối đến n8n; không thay thế n�
 
 ```text
 BUILD_WEBSITE/
-├── api/
-│   ├── _lib/               # Hàm xác thực và tiện ích dùng chung phía server
-│   ├── admin/              # API quản trị, ví dụ khôi phục mật khẩu
-│   └── n8n/                # API trung gian kết nối các workflow n8n
+├── api/                    # Các API handler gốc được giữ làm mã nguồn tham chiếu
+├── netlify/
+│   ├── functions/           # Netlify Functions triển khai API serverless
+│   │   ├── calendar.ts
+│   │   ├── n8n-proxy.ts
+│   │   └── admin-reset-password.ts
+│   └── lib/
+│       └── auth.ts          # Xác thực Supabase và tiện ích proxy n8n
 ├── docs/                   # Tài liệu và kiến thức thương hiệu
 ├── public/                 # Tài nguyên tĩnh, hình ảnh
 ├── src/
@@ -159,7 +164,8 @@ BUILD_WEBSITE/
 │   ├── App.tsx             # Thành phần ứng dụng chính
 │   ├── main.tsx            # Entry point
 │   └── index.css           # CSS toàn cục
-├── .env.example            # Mẫu biến môi trường (hiện chưa liệt kê đầy đủ)
+├── .env.example            # Mẫu tên biến môi trường, không chứa secret thật
+├── netlify.toml             # Build, Functions và rewrite API cho Netlify
 ├── index.html              # HTML entry point
 ├── package.json            # Dependencies và scripts
 ├── tsconfig.json           # Cấu hình TypeScript
@@ -194,8 +200,8 @@ Các biến được mã nguồn tham chiếu gồm:
 |---|---|
 | `VITE_SUPABASE_URL` | Frontend: URL dự án Supabase |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend: publishable key dùng để khởi tạo Supabase client |
-| `SUPABASE_URL` | Server: URL Supabase; API cũng có thể dùng `VITE_SUPABASE_URL` làm giá trị dự phòng |
-| `SUPABASE_PUBLISHABLE_KEY` | Server: publishable key dùng để xác thực phiên và truy vấn vai trò; có thể dùng `VITE_SUPABASE_PUBLISHABLE_KEY` làm giá trị dự phòng |
+| `SUPABASE_URL` | Server: URL Supabase |
+| `SUPABASE_PUBLISHABLE_KEY` | Server: publishable key dùng để xác thực phiên và truy vấn vai trò |
 | `SUPABASE_SECRET_KEY` | Server: khóa bí mật có quyền quản trị Supabase, chỉ dùng cho API đặt lại mật khẩu |
 | `ADMIN_PASSWORD_RESET_EMAIL` | Server: email tài khoản Admin được phép sử dụng chức năng đặt lại mật khẩu đặc biệt |
 | `ADMIN_PASSWORD_RESET_TOKEN` | Server: token xác thực riêng cho chức năng đặt lại mật khẩu; mã nguồn yêu cầu tối thiểu 32 ký tự |
@@ -208,7 +214,7 @@ Các biến được mã nguồn tham chiếu gồm:
 
 - Các biến có tiền tố `VITE_` được đưa vào bundle frontend khi build. Chỉ đặt ở đó các giá trị được phép công khai, chẳng hạn Supabase URL và publishable key.
 - Không đặt `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD_RESET_TOKEN` hoặc `N8N_WEBHOOK_KEY` trong biến `VITE_` hay mã frontend.
-- Các biến server phải được khai báo trong môi trường chạy API, không chỉ trong cấu hình build frontend.
+- Các biến server phải được khai báo trong Netlify Environment Variables với scope bao gồm **Functions** (và Build nếu ứng dụng cần ở thời điểm build), không chỉ trong cấu hình local.
 - Không commit file `.env`, private key, mật khẩu hoặc token lên repository.
 - File `.env.example` hiện chưa phản ánh đầy đủ các biến mà mã nguồn API yêu cầu; cần bổ sung mẫu tên biến và mô tả, tuyệt đối không điền giá trị bí mật thật.
 
@@ -264,18 +270,25 @@ Cần khai báo các biến frontend cần thiết trong phần Environment Vari
 
 Cấu hình trên chỉ mô tả việc build và xuất bản frontend. Nó không tự triển khai các API trong thư mục `api/`.
 
-### 6.2. Triển khai API
+### 6.2. Triển khai API bằng Netlify Functions
 
-Các API hiện có bao gồm:
+Các API đã có bản triển khai tương thích Netlify Functions trong `netlify/functions/`:
 
-- `/api/calendar`: kết nối các webhook lịch nội dung.
-- `/api/n8n/[route]`: proxy các workflow như dashboard, AI assistant, content studio, campaign planner, analytics, content library, content approval và automation.
-- `/api/n8n/giaothoi-dashboard`: endpoint dashboard.
-- `/api/admin/reset-password`: endpoint đặt lại mật khẩu Admin theo cơ chế xác thực riêng.
+- `/api/calendar` → Function `calendar`: kết nối các webhook lịch nội dung.
+- `/api/n8n/*` → Function `n8n-proxy`: proxy dashboard, AI assistant, content studio, campaign planner, analytics, content library, content approval và automation.
+- `/api/admin/reset-password` → Function `admin-reset-password`: đặt lại mật khẩu Admin theo cơ chế xác thực riêng.
 
-Các handler sử dụng giao diện request/response kiểu Node.js. Khi triển khai, cần chọn nền tảng tương thích với cấu trúc handler này hoặc chuyển đổi chúng sang định dạng functions mà nền tảng yêu cầu.
+Các rewrite được khai báo trong `netlify.toml`. Những đường dẫn `/api/...` được giữ nguyên để frontend hiện tại không phải đổi URL.
 
-Không coi các endpoint trên đã hoạt động production chỉ dựa vào việc frontend build thành công. Cần kiểm tra từng endpoint sau khi cấu hình môi trường chạy API.
+Khi cấu hình Netlify:
+
+1. Đặt Base directory là `01_WEBSITE/BUILD_WEBSITE` nếu deploy từ repository tổng hợp.
+2. Đặt Functions directory là `netlify/functions` (đã khai báo trong `netlify.toml`).
+3. Đảm bảo biến môi trường server có scope **Functions**.
+4. Deploy lại sau khi thêm hoặc thay đổi biến môi trường.
+5. Kiểm tra từng endpoint API và log của Function sau deploy.
+
+Không coi API đã hoạt động production chỉ dựa vào việc frontend build thành công. Cần kiểm thử các endpoint với phiên đăng nhập và vai trò tương ứng.
 
 ### 6.3. Khởi động n8n bằng PowerShell
 
@@ -362,7 +375,7 @@ Các nội dung cần kiểm thử để xác nhận khả năng vận hành đ�
 - Kiểm tra các trang giao diện dành cho khách hàng.
 - Kiểm tra đăng nhập, khôi phục mật khẩu và cập nhật mật khẩu Admin.
 - Kiểm tra phân quyền Admin, Creator, Approver và Publisher.
-- Kiểm tra API trung gian và môi trường triển khai API.
+- Kiểm tra các Netlify Functions và rewrite API.
 - Kiểm tra kết nối Supabase.
 - Kiểm tra kết nối API với webhook n8n qua Cloudflare Tunnel.
 - Kiểm tra các workflow và dịch vụ bên ngoài có liên quan.
