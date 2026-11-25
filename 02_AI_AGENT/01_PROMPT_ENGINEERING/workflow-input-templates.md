@@ -1,15 +1,14 @@
 # Workflow Input Templates – Content Studio & Campaign Planner
 
-> Loại tài liệu: cấu trúc đầu vào và giá trị mặc định được khai báo trong frontend Automation Center.  
-> Trạng thái: đã đối chiếu mã nguồn; đây không phải prompt/template nội bộ của node AI n8n.
+**Loại tài liệu:** Cấu trúc đầu vào, giá trị mặc định và payload được khai báo trong frontend Automation Center.  
+**Nguồn frontend:** `src/admin/pages/AutomationCenter.tsx`, repository `gam-tran/giao-thoi-website-v3`, branch `feature/ga4-ai-agent`.  
+**Nguồn runtime:** Hai workflow exports Content Studio API và Campaign Planner API được đối chiếu riêng.
 
 ## 1. Content Studio
 
-Nguồn: `src/admin/pages/AutomationCenter.tsx`, repository `gam-tran/giao-thoi-website-v3`, branch `feature/ga4-ai-agent`.
+### 1.1. Trường đầu vào frontend
 
-### Trường đầu vào và giá trị mặc định
-
-| Trường | Giá trị mặc định |
+| Trường | Giá trị mặc định trên frontend |
 |---|---|
 | `product` | `Tranh Đông Hồ` |
 | `platform` | `Facebook` |
@@ -18,16 +17,14 @@ Nguồn: `src/admin/pages/AutomationCenter.tsx`, repository `gam-tran/giao-thoi-
 | `tone` | `Gần gũi, tự nhiên` |
 | `brief` | `Giới thiệu tranh Đông Hồ và cách ứng dụng trong không gian sống hiện đại.` |
 
-### Các lựa chọn giao diện được khai báo
+### 1.2. Lựa chọn giao diện
 
-- Nền tảng: Facebook, TikTok, Instagram, Website, Zalo.
-- Loại nội dung: Post, Caption, Video Script, Product Description, Content Ideas.
-- Mục tiêu: Tăng tương tác, Tăng nhận diện thương hiệu, Tăng lượt truy cập website, Tăng tin nhắn tư vấn, Thúc đẩy mua hàng.
-- Giọng văn: trường nhập tự do.
+- **Nền tảng:** Facebook, TikTok, Instagram, Website, Zalo.
+- **Loại nội dung:** Post, Caption, Video Script, Product Description, Content Ideas.
+- **Mục tiêu:** Tăng tương tác, Tăng nhận diện thương hiệu, Tăng lượt truy cập website, Tăng tin nhắn tư vấn, Thúc đẩy mua hàng.
+- **Giọng văn:** trường nhập tự do.
 
-### Payload frontend gửi
-
-Cấu trúc được tạo trong mã nguồn:
+### 1.3. Payload frontend
 
 ```json
 {
@@ -45,9 +42,15 @@ Cấu trúc được tạo trong mã nguồn:
 
 Đây là payload mẫu theo giá trị mặc định của giao diện. Người dùng có thể thay đổi các trường trước khi chạy workflow.
 
+### 1.4. Đối chiếu với Content Studio runtime
+
+Workflow export sử dụng các trường cùng tên: `product`, `platform`, `contentType`, `objective`, `tone`, `brief`. Code node trong workflow có các giá trị mặc định riêng: `Chưa xác định`, `Facebook`, `Social post`, `Tăng tương tác`, `Gần gũi, tự nhiên` và chuỗi rỗng cho `brief`.
+
+Như vậy, giá trị mặc định của frontend và runtime không hoàn toàn giống nhau ở `product`, `contentType` và `brief`. Khi frontend gửi đầy đủ payload, giá trị do người dùng chọn được đưa vào request; các giá trị mặc định runtime đóng vai trò dự phòng khi trường không được truyền.
+
 ## 2. Campaign Planner
 
-### Trường đầu vào và giá trị mặc định
+### 2.1. Trường đầu vào frontend
 
 | Trường | Giá trị mặc định |
 |---|---|
@@ -60,16 +63,14 @@ Cấu trúc được tạo trong mã nguồn:
 | `channels` | `Facebook`, `TikTok`, `Website` |
 | `brief` | `Ưu tiên ngân sách tiết kiệm, nội dung gần gũi, nhấn mạnh tính ứng dụng và khả năng làm quà tặng.` |
 
-### Các lựa chọn mục tiêu được khai báo
+### 2.2. Lựa chọn mục tiêu
 
 - Tăng nhận diện thương hiệu.
 - Tăng tương tác.
 - Tăng lượt truy cập website.
 - Tăng tin nhắn và đơn hàng.
 
-### Payload frontend gửi
-
-Cấu trúc được tạo trong mã nguồn:
+### 2.3. Payload frontend
 
 ```json
 {
@@ -87,19 +88,23 @@ Cấu trúc được tạo trong mã nguồn:
 }
 ```
 
-Frontend kiểm tra các trường bắt buộc gồm tên chiến dịch, sản phẩm, khách hàng mục tiêu và ít nhất một kênh trước khi gửi.
+Frontend kiểm tra tên chiến dịch, sản phẩm, khách hàng mục tiêu và ít nhất một kênh trước khi gửi.
 
-## 3. Điều chưa thể kết luận
+### 2.4. Đối chiếu với Campaign Planner runtime
 
-Mã nguồn frontend chỉ xác nhận tên trường, giá trị mặc định, lựa chọn giao diện và payload được gửi tới API. Chưa có workflow export để xác nhận:
-- Node n8n nhận payload và mapping từng trường.
-- Prompt hệ thống hoặc prompt template bên trong node AI.
-- Cách xử lý ngân sách, thời lượng, kênh và brief.
-- Model hoặc công cụ mà workflow sử dụng.
+Workflow export sử dụng cùng các trường: `campaignName`, `product`, `objective`, `targetAudience`, `duration`, `budget`, `channels` và `brief`. Prompt builder nội suy các trường này vào Campaign Prompt.
 
-Không sử dụng các payload mẫu này để tuyên bố đã khôi phục được prompt nội bộ của Content Studio hoặc Campaign Planner.
+Code node gọi `request.channels.join(', ')`; vì vậy `channels` cần là mảng chuỗi không rỗng trước khi dựng prompt. Frontend kiểm tra một số trường bắt buộc, nhưng lớp kiểm tra ở workflow cần bảo đảm kiểu dữ liệu và tính đầy đủ của toàn bộ trường mà prompt sử dụng. Nếu thiếu hoặc sai kiểu, request cần được trả lỗi có cấu trúc trước khi gọi model.
 
-## Nguồn
+## 3. Nguyên tắc sử dụng
+
+- Payload mẫu mô tả dữ liệu frontend gửi, không phải bản sao prompt nội bộ của model.
+- Prompt và logic xử lý runtime được trình bày trong [Content Studio Runtime Prompt](./n8n-content-studio-runtime-prompt.md) và [Campaign Planner Runtime Prompt](./n8n-campaign-planner-runtime-prompt.md).
+- Cần phân biệt giá trị mặc định trên giao diện với giá trị dự phòng trong workflow.
+- Không suy diễn kết quả AI hoặc hiệu quả chiến dịch từ payload đầu vào.
+
+## 4. Nguồn
 
 - [AutomationCenter.tsx – source](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/src/admin/pages/AutomationCenter.tsx)
 - [API n8n proxy – source](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/api/n8n/%5Broute%5D.ts)
+- [n8n Workflow Inventory](../04_WORKFLOWS/n8n-workflow-inventory.md)
