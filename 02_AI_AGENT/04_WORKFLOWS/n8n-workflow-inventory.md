@@ -90,7 +90,7 @@ Schedule Trigger → đọc Calendar → lọc Facebook post đến hạn hoặc
 - Tối đa 3 lần thử; retryAfter lần đầu 5 phút, lần sau 15 phút.
 
 ### Automation
-Các API liệt kê workflow, đọc schedule/executions, chạy workflow allowlist và activate/deactivate workflow. Cần review quyền truy cập trước khi expose endpoint.
+Các API liệt kê workflow, đọc schedule/executions, chạy workflow allowlist và activate/deactivate workflow. Endpoint quản trị cần xác thực, phân quyền theo vai trò, allowlist workflow IDs và audit log cho thao tác làm thay đổi trạng thái.
 
 ## 5. Data Tables và tích hợp
 
