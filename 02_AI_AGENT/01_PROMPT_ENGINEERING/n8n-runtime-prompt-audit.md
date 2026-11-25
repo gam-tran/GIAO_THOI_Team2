@@ -229,15 +229,16 @@ The user subsequently supplied the following HTTP GET Skill and Reference fetche
 
 ### Updated inventory interpretation
 
-- Confirmed from user-supplied descriptions: 1 Product Catalogue endpoint, 1 GA4 report endpoint, 1 GA4 body-builder description, 1 Brand Knowledge endpoint, 5 Skill fetchers (Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning), and 8 Reference fetchers listed above.
-- This is a functional inventory of the supplied excerpts, not yet a verified complete enumeration of all 16 HTTP Request tools. The exact UI tool names, request node wiring, response mapping, and execution results have not been supplied.
+- Confirmed from user-supplied descriptions: exactly 16 HTTP request endpoints are accounted for — 1 Product Catalogue, 1 GA4 report, 1 Brand Knowledge, 5 Skill fetchers (Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning), and 8 Reference fetchers. This reconciles with the Builder screenshot showing 16 HTTP Request tools.
+- The separate GA4 Request Body Builder description specifies how the JSON body should be composed; the supplied information does not establish whether this is a separate HTTP Request node or an instruction/description associated with the GA4 tool. It is therefore documented as GA4 query-construction logic, not counted as a seventeenth HTTP Request.
+- The functional inventory now accounts for all 16 HTTP Request tools based on the user's supplied descriptions. Exact UI tool names, node wiring, response mapping, and successful execution results are still unverified.
 - Marketing Ideas Skill and Product Marketing Context remain unconfirmed as Builder HTTP fetchers. Repository presence alone is not proof of a connected endpoint.
 - References should be fetched selectively when their subject is relevant, not all on every user request.
 - Campaign Planning Skill instructions explicitly prohibit autonomous publishing, customer messaging, or ad execution; this is consistent with the central approval boundary.
 
 ### Updated next verification items
 
-- [ ] Obtain descriptions/configurations for any remaining HTTP Request tools to reconcile the inventory against the UI count of 16.
+- [x] Reconcile the supplied endpoint descriptions against the UI count of 16 HTTP Request tools.
 - [ ] Verify all listed raw GitHub GET endpoints return the expected Markdown/source content.
 - [ ] Confirm each Skill/Reference response is actually made available to the model after the HTTP Request runs.
 - [ ] Verify whether approval is enabled per tool; supplied excerpts show the “Require approval” option but do not establish its current checked state.
