@@ -1,30 +1,34 @@
 # Marketing Skills
 
-Thư mục này chứa bản sao tài liệu Marketing Skills đã được xác minh trong repository nguồn và đưa vào repository tổng hợp để bàn giao, tra cứu và phát triển.
+Thư mục này tập hợp bối cảnh GIAO THỜI, các hướng dẫn chuyên môn Marketing và tài liệu tham khảo được tổ chức để sử dụng nhất quán trong hệ thống AI Agent.
 
-## Bối cảnh GIAO THỜI
+## 1. Bối cảnh GIAO THỜI
 
-- [Product Marketing Context](./product-marketing-context.md) – bối cảnh mô hình kinh doanh, thương hiệu, khách hàng, sản phẩm, nội dung và mục tiêu Marketing. Tài liệu nguồn ghi Version 1.0 – Draft.
-- Brand Knowledge: [xem tài liệu trong repository nguồn](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/docs/brand-knowledge.md).
+- [Product Marketing Context](./product-marketing-context.md) – tổng hợp mô hình kinh doanh, thương hiệu, khách hàng, sản phẩm, định vị và mục tiêu Marketing. Tài liệu đóng vai trò bối cảnh định hướng; các giả định cần được phân biệt với dữ kiện đã xác thực.
+- [Brand Knowledge](https://github.com/gam-tran/giao-thoi-website-v3/blob/feature/ga4-ai-agent/docs/brand-knowledge.md) – nguồn kiến thức thương hiệu được truy xuất riêng trong workflow AI Assistant và các công cụ liên quan.
 
-## Skills đã chuyển
+## 2. Danh sách Skills
 
-| Skill | Tài liệu |
+| Skill | Chức năng |
 |---|---|
-| Content Strategy | [SKILL.md](./skills/content-strategy/SKILL.md) |
-| Social Content | [SKILL.md](./skills/social-content/SKILL.md) |
-| Copywriting | [SKILL.md](./skills/copywriting/SKILL.md) |
-| Marketing Ideas | [SKILL.md](./skills/marketing-ideas/SKILL.md) |
-| Campaign Planning | [SKILL.md](./skills/campaign-planning/SKILL.md) |
-| Analytics Tracking | [SKILL.md](./skills/analytics-tracking/SKILL.md) |
+| [Content Strategy](./skills/content-strategy/SKILL.md) | Xây dựng chiến lược và định hướng nội dung |
+| [Social Content](./skills/social-content/SKILL.md) | Lập kế hoạch và sáng tạo nội dung mạng xã hội |
+| [Copywriting](./skills/copywriting/SKILL.md) | Viết thông điệp, nội dung quảng cáo và nội dung chuyển đổi |
+| [Marketing Ideas](./skills/marketing-ideas/SKILL.md) | Phát triển ý tưởng Marketing theo mục tiêu và nguồn lực |
+| [Campaign Planning](./skills/campaign-planning/SKILL.md) | Lập kế hoạch chiến dịch, kênh, ngân sách, timeline và KPI |
+| [Analytics Tracking](./skills/analytics-tracking/SKILL.md) | Thiết kế đo lường, sự kiện, GA4 và GTM |
 
-## Tài liệu tham khảo
+## 3. Tài liệu tham khảo
 
-- Analytics Tracking: [Event Library](./skills/analytics-tracking/references/event-library.md), [GA4 Implementation](./skills/analytics-tracking/references/ga4-implementation.md), [GTM Implementation](./skills/analytics-tracking/references/gtm-implementation.md).
-- Copywriting: [Copy Frameworks](./skills/copywriting/references/copy-frameworks.md), [Natural Transitions](./skills/copywriting/references/natural-transitions.md).
-- Marketing Ideas: [Ideas by Category](./skills/marketing-ideas/references/ideas-by-category.md).
-- Social Content: [Platforms](./skills/social-content/references/platforms.md), [Post Templates](./skills/social-content/references/post-templates.md), [Reverse Engineering](./skills/social-content/references/reverse-engineering.md).
+- **Analytics Tracking:** [Event Library](./skills/analytics-tracking/references/event-library.md), [GA4 Implementation](./skills/analytics-tracking/references/ga4-implementation.md), [GTM Implementation](./skills/analytics-tracking/references/gtm-implementation.md).
+- **Copywriting:** [Copy Frameworks](./skills/copywriting/references/copy-frameworks.md), [Natural Transitions](./skills/copywriting/references/natural-transitions.md).
+- **Marketing Ideas:** [Ideas by Category](./skills/marketing-ideas/references/ideas-by-category.md).
+- **Social Content:** [Platforms](./skills/social-content/references/platforms.md), [Post Templates](./skills/social-content/references/post-templates.md), [Reverse Engineering](./skills/social-content/references/reverse-engineering.md).
 
-## Lưu ý về tích hợp Agent
+## 4. Quan hệ giữa thư viện tài liệu và Agent Builder
 
-Các file này hiện được lưu dưới dạng tài liệu Markdown trong Git. Chưa có workflow export để xác nhận n8n AI Agent tự động đọc, lựa chọn hoặc nạp các Skill này vào model context. Không mô tả đây là runtime skill loading cho đến khi kiểm tra workflow thực tế.
+Các file Markdown trong thư mục này là thư viện tài liệu chuyên môn của dự án. Trong cấu hình Agent Builder, HTTP Request fetcher được khai báo cho năm Skills: Content Strategy, Social Content, Copywriting, Campaign Planning và Analytics Tracking. Các Reference fetcher được khai báo riêng cho tám tài liệu tham khảo thuộc Social Content, Copywriting và Analytics Tracking.
+
+Marketing Ideas được lưu trong thư viện nhưng không nằm trong danh sách năm Skill fetcher đã cấu hình. Product Marketing Context cũng được lưu trong thư viện; không có endpoint fetcher riêng cho tài liệu này trong danh sách cấu hình được đối chiếu. Nguồn Brand Knowledge được truy xuất qua endpoint riêng.
+
+Việc một tài liệu tồn tại trong Git không đồng nghĩa tài liệu đó tự động được nạp vào mọi Agent hoặc workflow. Phạm vi sử dụng phụ thuộc vào công cụ và luồng xử lý được cấu hình cho từng thành phần.
