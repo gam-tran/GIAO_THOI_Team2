@@ -103,6 +103,6 @@ Không nhắc lại toàn bộ câu hỏi nếu không cần thiết.
 - Product/brand context is loaded from a raw GitHub URL on the feature branch; its content can change independently of this workflow export.
 - Merge output ordering is relied upon by the code (`items[0]` product, `items[1]` brand), matching the exported connection indices. This assumption should be regression-tested if the Merge node configuration changes.
 
-## Status
+## Scope of findings
 
-**Source-extracted / static review completed.** Not runtime-tested. Verify the deployed workflow, actual model selection, source fetch success, and webhook execution before labeling production-verified.
+This document records the prompt and node behavior visible in the supplied workflow export. The export identifies the model node type but does not specify its model version; source retrieval and response behavior are determined by the deployed workflow and its execution environment.
