@@ -1,6 +1,6 @@
 # GIAO THỜI – PRODUCT MARKETING CONTEXT
 
-*Version: 1.0 – Draft*
+*Version: 1.0*
 
 ## 1. Tổng quan thương hiệu (Brand Overview)
 
@@ -146,9 +146,9 @@ Khi thực hiện các nhiệm vụ marketing, AI Agent phải:
 - Nếu thiếu dữ liệu, nêu rõ phần còn thiếu và đề xuất cách thu thập.
 - Không tự ý đăng nội dung, gửi tin nhắn hoặc triển khai chiến dịch khi chưa được con người phê duyệt.
 
-## 10. Thông tin còn cần bổ sung
+## 10. Ranh giới thông tin chưa được xác nhận
 
-Các nội dung dưới đây chưa được xác nhận đầy đủ:
+Các nội dung dưới đây không được xem là dữ kiện đã xác nhận nếu chưa có tài liệu hoặc nguồn dữ liệu tương ứng:
 - Chính sách giao hàng, đổi trả và bảo hành.
 - Chính sách thanh toán.
 - Quy trình tư vấn và xử lý đơn hàng.
