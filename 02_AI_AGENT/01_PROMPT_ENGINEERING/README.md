@@ -15,7 +15,7 @@ Thư mục này lưu prompt theo từng lớp thực thi của GIAO THỜI AI, g
 | [n8n-ai-assistant-runtime-prompt.md](./n8n-ai-assistant-runtime-prompt.md) | AI Assistant API / Build Assistant Prompt | Đã trích xuất tĩnh từ JSON |
 | [n8n-campaign-planner-runtime-prompt.md](./n8n-campaign-planner-runtime-prompt.md) | Campaign Planner API / Build Campaign Prompt | Đã trích xuất tĩnh từ JSON |
 | [n8n-content-studio-runtime-prompt.md](./n8n-content-studio-runtime-prompt.md) | Content Studio API / Build Marketing Prompt | Đã trích xuất tĩnh từ JSON |
-| [n8n-runtime-prompt-audit.md](./n8n-runtime-prompt-audit.md) | So sánh 3 workflow, phát hiện và test matrix | Static review hoàn tất; runtime tests pending |
+| [n8n-runtime-prompt-audit.md](./n8n-runtime-prompt-audit.md) | So sánh 3 workflow, phát hiện, remediation notes và test matrix | Static review + remediation specs; runtime tests pending |
 
 Các prompt runtime được xây dựng trong Code node rồi truyền vào LLM node qua `$json.prompt`. Chúng là các prompt riêng theo tác vụ, không phải một System Prompt duy nhất dùng chung.
 
@@ -40,7 +40,8 @@ Không gộp toàn bộ prompt tác vụ vào Central Instructions nếu điều
 - Model/version thực tế của AI Assistant và Campaign Planner (JSON export không khai báo rõ modelName).
 - Skills/Tools đang được gắn thực tế trong Agent Builder và cách chúng liên hệ với các workflow n8n.
 - Kiểm thử end-to-end theo test matrix trong `n8n-runtime-prompt-audit.md`.
-- Xác nhận các quy tắc vận hành hiện hành, bao gồm giới hạn Facebook không gộp ảnh và video trong cùng một bài đăng.
+- Triển khai và kiểm thử deterministic validation cho Facebook mixed-media ở frontend/workflow (prompt guardrail đã được ghi nhận).
+- Áp dụng input validation cho Campaign Planner Code node theo patch đề xuất (chưa deploy).
 
 ## 6. Nguồn mã nguồn đối chiếu
 
