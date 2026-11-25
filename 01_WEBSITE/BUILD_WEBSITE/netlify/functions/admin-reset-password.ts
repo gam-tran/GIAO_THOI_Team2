@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { jsonResponse } from './_lib/auth';
+import { jsonResponse } from '../lib/auth';
 
 function safeEqual(a: string, b: string) {
   const left = Buffer.from(a);
