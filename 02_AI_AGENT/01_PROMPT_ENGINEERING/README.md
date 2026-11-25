@@ -7,6 +7,7 @@ Thư mục này lưu prompt theo từng lớp thực thi của GIAO THỜI AI, g
 | Tài liệu | Nội dung | Trạng thái |
 |---|---|---|
 | [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md) | Central Instructions v2.0, đã chuẩn hóa theo ảnh Builder và nội dung Instructions người dùng gửi | Builder-aligned draft – chưa dán lại vào Builder hoặc kiểm thử runtime |
+| [ai-agent-design-decisions.md](./ai-agent-design-decisions.md) | Các quyết định thiết kế, vấn đề, cơ sở lựa chọn, tác động và trạng thái triển khai | Design rationale documented; implementation/runtime verification pending where noted |
 
 ## 2. n8n runtime prompts — trích xuất từ workflow exports
 
