@@ -1,31 +1,21 @@
 # Integrations
 
-Tài liệu này ghi nhận các tích hợp có bằng chứng từ mã nguồn và phân biệt với các kết nối runtime chưa được xác minh.
+Tài liệu tích hợp được cập nhật dựa trên mã nguồn website và 19 workflow n8n JSON exports.
 
-## Các thành phần
+## Tài liệu
+- [n8n Integration Architecture](./n8n-integration-architecture.md): GitHub raw, Gemini, GA4, n8n REST API, Data Tables, Facebook Graph API và Supabase Storage.
+- [Security and Reliability Review](./n8n-security-reliability-review.md): webhook authentication, quyền automation, duplicate endpoint và consistency GA4.
 
-| Thành phần | Vai trò có thể xác minh | Trạng thái |
-|---|---|---|
-| Supabase | Frontend/API dùng xác thực và kiểm tra vai trò người dùng | Có tích hợp trong mã nguồn; cần kiểm thử môi trường triển khai |
-| n8n | Nhận request webhook từ API proxy để xử lý các chức năng tự động hóa | Có endpoint và route được khai báo; workflow runtime chưa được export để kiểm tra |
-| Cloudflare Tunnel | Cung cấp URL truy cập đến n8n chạy trong môi trường riêng | Được mô tả trong tài liệu vận hành; cần xác minh URL/tiến trình hiện hành |
-| Gemini / Google GenAI | Repository có dependency liên quan Google GenAI | Chưa đủ căn cứ xác nhận model AI Assistant thực tế sử dụng |
-| GA4 / GTM | Có Marketing Skill và tài liệu hướng dẫn tracking | Chưa đủ căn cứ xác nhận AI Agent có GA4 Data API tool hoặc quyền truy vấn property |
-| Social platform APIs | Có các chức năng/workflow nội dung và xuất bản được khai báo ở mức ứng dụng | Cần kiểm tra credential, workflow và test thực tế theo từng nền tảng |
+## Thành phần quan sát được
+| Thành phần | Vai trò |
+|---|---|
+| GitHub raw | Nạp Product Data và Brand Knowledge |
+| Google Gemini | AI Assistant, Content Studio, Campaign Planner, Marketing Insights |
+| Google Analytics Data API | Báo cáo GA4 qua runReport |
+| n8n REST API | Quản lý workflows, executions và schedules |
+| n8n Data Tables | Content Calendar và Content Library |
+| Facebook Graph API | Đăng bài text, album ảnh, video |
+| Supabase Storage | Signed URL cho media |
 
-## Quy tắc bảo mật
-
-- Không lưu API key, access token, refresh token, webhook secret hoặc service-role key trong Git.
-- Dùng biến môi trường/secret store ở môi trường triển khai.
-- Chỉ cấp quyền tối thiểu cần thiết cho từng integration.
-- Không coi việc có dependency hoặc tài liệu hướng dẫn là bằng chứng kết nối đã hoạt động.
-- Các hành động đăng bài, nhắn khách hàng, chạy quảng cáo hoặc thay đổi dữ liệu cần có kiểm soát và phê duyệt phù hợp.
-
-## Cần xác minh khi bàn giao
-
-1. Danh sách credentials và owner (không ghi giá trị secret).
-2. Model/provider và phiên bản thực tế trong workflow AI.
-3. GA4 property, Data API scopes, dimensions/metrics được phép truy vấn.
-4. Supabase project, auth policies và role checks.
-5. n8n webhook, workflow active status, retry và error handling.
-6. Social API permissions, token lifecycle và cơ chế approval.
+## Bảo mật và xác minh
+Export chỉ cho thấy tên credential được chọn, không chứa secret value. Không commit API keys, access tokens, refresh tokens, webhook secrets hoặc service-role keys. Không coi việc có node, dependency, credential reference hoặc tài liệu là bằng chứng tích hợp đã chạy thành công; cần kiểm tra quyền, cấu hình triển khai và execution logs.
