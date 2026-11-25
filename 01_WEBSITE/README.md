@@ -1,102 +1,110 @@
 # 01 – Website GIAO THỜI
 
-## 1. Giới thiệu
+## 1. Vai trò của thư mục
 
-Thư mục này lưu trữ mã nguồn website GIAO THỜI trong repository tổng hợp của dự án nhóm.
+Thư mục `01_WEBSITE/` lưu trữ phần website GIAO THỜI trong repository tổng hợp của dự án nhóm. README này cung cấp thông tin tổng quan để người đọc hiểu website là gì, mã nguồn nằm ở đâu, có những thành phần chính nào và trạng thái bàn giao hiện tại.
 
-Website giới thiệu và phân phối các sản phẩm mang chất liệu, kỹ thuật và cảm hứng truyền thống Việt Nam trong đời sống hiện đại. GIAO THỜI hoạt động theo mô hình phân phối trung gian, không phải đơn vị trực tiếp sản xuất toàn bộ sản phẩm.
+Tài liệu này **không thay thế hướng dẫn kỹ thuật**. Cách cài đặt, chạy local, cấu hình biến môi trường và triển khai được trình bày riêng trong [README kỹ thuật của mã nguồn](./BUILD_WEBSITE/README.md).
 
-**Website đang được sử dụng:** https://giaothoivn.netlify.app
+## 2. Sản phẩm website
 
-## 2. Cấu trúc thư mục
+Website GIAO THỜI giới thiệu và hỗ trợ phân phối các sản phẩm mang chất liệu, kỹ thuật và cảm hứng truyền thống Việt Nam trong đời sống hiện đại. GIAO THỜI hoạt động theo mô hình phân phối trung gian, kết nối sản phẩm với khách hàng; không mặc định là đơn vị trực tiếp sản xuất.
 
-- `BUILD_WEBSITE/`: mã nguồn website, giao diện khách hàng, khu vực Admin, API, tài liệu và cấu hình triển khai.
-- `README.md`: tài liệu tổng quan của thư mục Website.
+**Website:** https://giaothoivn.netlify.app
 
-Tài liệu cài đặt, cấu trúc mã nguồn, biến môi trường và hướng dẫn vận hành chi tiết nằm trong [BUILD_WEBSITE/README.md](./BUILD_WEBSITE/README.md).
+Các khu vực chính của website:
 
-## 3. Nguồn mã nguồn
+- **Website dành cho khách hàng:** giới thiệu thương hiệu, sản phẩm, bộ sưu tập và nội dung văn hóa.
+- **Khu vực quản trị (Admin):** hỗ trợ quản lý nội dung và các hoạt động marketing, với hệ thống đăng nhập và phân quyền.
+- **Tích hợp tự động hóa:** kết nối một số chức năng quản trị với các workflow n8n thông qua API trung gian.
 
-- **Repository nguồn:** [giao-thoi-website-v3](https://github.com/gam-tran/giao-thoi-website-v3/tree/fix/content-quality-gate-0f8e-base)
-- **Nhánh nguồn:** `fix/content-quality-gate-0f8e-base`
-- **Vị trí trong repository tổng hợp:** `01_WEBSITE/BUILD_WEBSITE/`
+## 3. Cấu trúc thư mục
 
-Mã nguồn được đưa vào repository tổng hợp để phục vụ quản lý, theo dõi và bàn giao bài làm nhóm. Repository nguồn được giữ nguyên độc lập, không bị thay thế bởi bản tổng hợp.
+```text
+01_WEBSITE/
+├── README.md              # Tài liệu tổng quan của phần Website
+└── BUILD_WEBSITE/         # Mã nguồn và tài liệu kỹ thuật của website
+    ├── src/               # Frontend và khu vực Admin
+    ├── public/            # Tài nguyên tĩnh
+    ├── api/               # API handler gốc
+    ├── netlify/           # Netlify Functions và thư viện dùng chung
+    ├── docs/              # Tài liệu dự án
+    └── README.md          # Hướng dẫn kỹ thuật, cài đặt và vận hành
+```
 
-## 4. Công nghệ và các thành phần chính
+Chi tiết cấu trúc bên trong `BUILD_WEBSITE/` được mô tả tại [README kỹ thuật](./BUILD_WEBSITE/README.md).
+
+## 4. Công nghệ chính
 
 | Thành phần | Công nghệ / dịch vụ |
 |---|---|
 | Frontend | React, TypeScript, Vite |
 | Giao diện | Tailwind CSS, Lucide React, Motion |
 | Xác thực và dữ liệu | Supabase |
-| AI integration | Google Gemini API |
-| Workflow automation | n8n |
+| Tích hợp AI | Google Gemini API (dependency có trong dự án; phạm vi sử dụng cần xem theo từng chức năng) |
+| Tự động hóa quy trình | n8n |
 | Hosting website hiện tại | Netlify |
-| Kết nối công khai đến n8n | Cloudflare Quick Tunnel |
-| Môi trường chạy n8n | Windows PowerShell |
+| Kết nối từ Internet đến n8n | Cloudflare Quick Tunnel |
+| Môi trường chạy n8n trong cấu hình hiện tại | Windows, PowerShell |
 
-### Kiến trúc vận hành tổng quát
+## 5. Kiến trúc ở mức tổng quan
+
+- Frontend website được build bằng Vite và hiện được cung cấp qua Netlify.
+- Supabase được sử dụng cho xác thực và dữ liệu, bao gồm thông tin vai trò người dùng.
+- Mã nguồn có các API handler gốc trong `api/` và các bản Netlify Functions trong `netlify/functions/`.
+- Các API trung gian có nhiệm vụ kiểm tra phiên, vai trò rồi chuyển tiếp request đến webhook n8n.
+- n8n hiện được cấu hình chạy trên máy Windows; Cloudflare Quick Tunnel cung cấp URL HTTPS để API có thể gọi đến n8n từ bên ngoài mạng nội bộ.
+
+Luồng tích hợp dự kiến:
 
 ```text
-Người dùng
-    |
-    v
-Website GIAO THỜI (Netlify)
-    |
-    +--------------------> Supabase
-    |                       Xác thực / dữ liệu / vai trò
-    |
-    v
+Người dùng / Admin
+        |
+        v
+Frontend website (Netlify)
+        |                         |
+        |                         +------> Supabase
+        |                                  Xác thực / dữ liệu / vai trò
+        v
 API trung gian (Netlify Functions)
-    |
-    v
+        |
+        v
 Cloudflare Quick Tunnel
-    |
-    v
+        |
+        v
 n8n chạy trên máy Windows
-    |
-    v
-Các workflow tự động hóa
+        |
+        v
+Workflow tự động hóa
 ```
 
-Cloudflare Quick Tunnel tạo kết nối HTTPS từ Internet đến n8n đang chạy cục bộ. PowerShell được sử dụng để khởi động và duy trì các tiến trình n8n, Cloudflare Tunnel. Quick Tunnel có thể cấp URL khác sau khi khởi động lại.
+Sơ đồ thể hiện kiến trúc tích hợp được thiết kế trong mã nguồn, không phải bằng chứng rằng mọi API và workflow đều đang hoạt động ổn định trên production.
 
-## 5. Chức năng chính
+## 6. Nguồn mã và phạm vi bàn giao
 
-### Website dành cho khách hàng
+- **Repository mã nguồn gốc:** [giao-thoi-website-v3](https://github.com/gam-tran/giao-thoi-website-v3/tree/fix/content-quality-gate-0f8e-base)
+- **Nhánh mã nguồn được sử dụng:** `fix/content-quality-gate-0f8e-base`
+- **Bản mã nguồn trong repository tổng hợp:** `01_WEBSITE/BUILD_WEBSITE/`
 
-- Giới thiệu thương hiệu và câu chuyện GIAO THỜI.
-- Trưng bày sản phẩm và bộ sưu tập.
-- Chia sẻ nội dung về chất liệu, kỹ thuật và văn hóa truyền thống.
-- Hỗ trợ khách hàng tìm hiểu sản phẩm và tiếp cận kênh tư vấn, mua hàng.
+Repository tổng hợp phục vụ việc tập hợp và bàn giao sản phẩm trong dự án nhóm. Repository nguồn được giữ độc lập; các thay đổi trong repository tổng hợp không tự động cập nhật ngược về repository nguồn.
 
-### Khu vực Admin
+## 7. Trạng thái hiện tại và lưu ý
 
-- Đăng nhập và xác thực thông qua Supabase.
-- Phân quyền theo các vai trò Admin, Creator, Approver và Publisher.
-- Quản lý nội dung và các bước trong quy trình sáng tạo, phê duyệt, xuất bản.
-- Kết nối các workflow n8n thông qua API trung gian.
+- Mã nguồn website và tài liệu kỹ thuật được lưu trong `BUILD_WEBSITE/`.
+- Website có địa chỉ truy cập Netlify nêu tại mục 2.
+- Cấu hình Netlify Functions và rewrite API đã được thêm vào bản mã nguồn trong repository tổng hợp.
+- Việc thêm cấu hình vào repository **chưa xác nhận** rằng bản deploy Netlify đã sử dụng cấu hình mới hoặc các API đã được kiểm thử thành công.
+- n8n và Cloudflare Quick Tunnel phụ thuộc vào máy Windows, tiến trình đang chạy và URL tunnel hiện hành.
 
-Các chức năng quản trị phụ thuộc vào cấu hình Supabase, biến môi trường server, API và workflow n8n tương ứng.
+Khi nghiệm thu hoặc bàn giao, cần phân biệt rõ giữa **mã nguồn đã có**, **cấu hình đã khai báo** và **chức năng đã được kiểm thử thực tế**. Không xem build frontend thành công là bằng chứng cho việc xác thực Admin, API, kết nối n8n hay toàn bộ workflow đã hoạt động.
 
-## 6. Trạng thái mã nguồn và triển khai
+## 8. Tài liệu kỹ thuật
 
-- Mã nguồn website đã được đưa vào thư mục `BUILD_WEBSITE/` trong repository tổng hợp.
-- Frontend đang được truy cập qua Netlify.
-- Các Netlify Functions và cấu hình rewrite API đã được bổ sung trong repository tổng hợp nhằm giữ các đường dẫn API mà frontend đang sử dụng.
-- n8n tiếp tục chạy trên máy Windows và được công khai thông qua Cloudflare Quick Tunnel.
+Mở [`BUILD_WEBSITE/README.md`](./BUILD_WEBSITE/README.md) để xem:
 
-**Lưu ý:** Việc thêm mã nguồn Netlify Functions và cấu hình không đồng nghĩa các API đã được deploy và kiểm thử thành công trên môi trường production. Cần cấu hình đầy đủ Environment Variables trong Netlify, deploy lại và kiểm tra thực tế đăng nhập, phân quyền, các API và workflow n8n trước khi xác nhận toàn bộ hệ thống hoạt động.
-
-## 7. Tài liệu chi tiết
-
-Xem [README triển khai và vận hành website](./BUILD_WEBSITE/README.md) để biết:
-
-- Cấu trúc thư mục và công nghệ.
-- Cài đặt dependencies, chạy local và build.
-- Cấu hình biến môi trường.
-- Triển khai frontend và Netlify Functions.
-- Khởi động n8n bằng PowerShell.
-- Khởi động Cloudflare Quick Tunnel.
-- Kiểm thử các chức năng tích hợp.
+- Yêu cầu môi trường và cách cài đặt dependencies.
+- Cách chạy website local, build và kiểm tra TypeScript.
+- Danh sách biến môi trường và lưu ý bảo mật.
+- Cấu hình Netlify frontend và Netlify Functions.
+- Cách khởi động n8n và Cloudflare Quick Tunnel.
+- Luồng xử lý webhook và danh sách kiểm thử trước khi xác nhận vận hành.
