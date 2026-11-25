@@ -1,0 +1,32 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Keep the existing /api/* URLs used by the Admin frontend.
+[[redirects]]
+  from = "/api/calendar"
+  to = "/.netlify/functions/calendar"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/reset-password"
+  to = "/.netlify/functions/admin-reset-password"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/n8n/*"
+  to = "/.netlify/functions/n8n-proxy/:splat"
+  status = 200
+  force = true
+
+# SPA fallback must stay after API redirects.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
