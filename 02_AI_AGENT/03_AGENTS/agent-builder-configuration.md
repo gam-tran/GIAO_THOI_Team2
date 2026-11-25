@@ -1,77 +1,78 @@
 # Agent Builder Configuration – GIAO THỜI Marketing AI Agent
 
-> **Nguồn:** Ảnh chụp màn hình do người dùng cung cấp ngày 25/11/2026.  
-> **Phạm vi:** Ghi nhận cấu hình nhìn thấy trên giao diện Build; không phải bản export cấu hình runtime.
+**Nguồn đối chiếu:** Ảnh chụp giao diện Build do nhóm cung cấp ngày 25/11/2026, kết hợp danh mục mô tả Tool và endpoint được cung cấp cho dự án.  
+**Phạm vi:** Tài liệu hóa cấu hình hiển thị và phân biệt Agent Builder với các workflow n8n runtime.
 
-## 1. Cấu hình nhìn thấy
+## 1. Cấu hình hiển thị trên Agent Builder
 
-| Khu vực | Giá trị quan sát được | Ghi chú |
+| Khu vực | Giá trị quan sát được | Ý nghĩa |
 |---|---|---|
-| Agent name | GIAO THỜI – Marketing AI Agent | Hiển thị ở trang Build |
-| Model | gemini-3.1-flash-lite | Tên model hiển thị trong selector |
-| Instructions | Có prompt dài về Marketing Analytics, orchestration và các module | Nội dung prompt cũ cần được chuẩn hóa |
-| Skills | Chưa thấy Skill nào được thêm vào khu vực Skills | Danh sách lựa chọn đang mở trong ảnh không đồng nghĩa đã cài |
-| Trigger channel | n8n Chat | Hiển thị trong mục Triggers |
-| Tool | 16 HTTP Request | Hiển thị trong Capabilities |
-| Tool | Google analytics | Hiển thị trong Capabilities |
-| Web search | Off | Trạng thái hiển thị trong ảnh |
+| Agent name | GIAO THỜI – Marketing AI Agent | Tên Agent trên giao diện Build |
+| Model | gemini-3.1-flash-lite | Model được hiển thị trong model selector |
+| Instructions | Prompt hướng dẫn dài về Marketing Analytics, orchestration và các module | Lớp hướng dẫn cấp Agent |
+| Skills | Khu vực Skills không hiển thị Skill đã gắn trong ảnh | Phân biệt với các tài nguyên có thể truy xuất qua HTTP Request |
+| Trigger channel | n8n Chat | Kênh trigger được hiển thị |
+| HTTP Request | 16 công cụ | Các endpoint đọc dữ liệu, truy xuất Skills/References và gọi GA4 theo mô tả cấu hình |
+| Google analytics | Google analytics | Công cụ Analytics hiển thị riêng trong Capabilities |
+| Web search | Off | Web search không được bật trong ảnh |
 
-## 2. Skills có trong danh sách lựa chọn
+## 2. Skills và References trong thư viện lựa chọn
 
 ### Marketing Skills
-- Content strategy skill
-- Social content skill
-- Copywriting skill
-- Analytics tracking skill
-- Campaign planning skill
+
+- Content Strategy
+- Social Content
+- Copywriting
+- Analytics Tracking
+- Campaign Planning
 
 ### References
-- Social platforms reference
-- Social post templates reference
-- Social reverse engineering reference
-- Copywriting frameworks reference
-- Natural transitions reference
-- Analytics event library reference
-- GA4 implementation reference
-- GTM implementation reference
 
-### Những tài nguyên đã có trong Git nhưng chưa thấy trong danh sách lựa chọn ở ảnh
-- Marketing Ideas Skill
-- Product Marketing Context
+- Social Platforms
+- Social Post Templates
+- Social Reverse Engineering
+- Copywriting Frameworks
+- Natural Transitions
+- Analytics Event Library
+- GA4 Implementation
+- GTM Implementation
 
-Không được suy luận rằng hai tài nguyên này đã được gắn vào Agent. Cần kiểm tra cấu hình thực tế hoặc bổ sung theo cơ chế được nền tảng hỗ trợ.
+Marketing Ideas Skill và Product Marketing Context có trong thư viện Git của dự án nhưng không nằm trong danh sách tài nguyên hiển thị ở khu vực lựa chọn của ảnh Builder được đối chiếu.
 
-## 3. Tools và giới hạn xác minh
+## 3. Danh mục 16 HTTP Request
 
-Ảnh cho thấy hai mục trong Capabilities: `16 HTTP Request` và `Google analytics`.
+Danh mục endpoint được cung cấp được phân nhóm như sau:
 
-Ảnh không thể hiện:
-- Chi tiết cấu hình từng HTTP Request.
-- Endpoint, authentication hoặc payload thực tế.
-- Property ID đang được Google Analytics tool sử dụng.
-- Danh sách Metrics và Dimensions được tool chấp nhận.
-- Tool có thể truy xuất Product Data hoặc Brand Knowledge hay không.
+| Nhóm | Số lượng | Thành phần |
+|---|---:|---|
+| Product Catalogue | 1 | Đọc nguồn dữ liệu sản phẩm từ GitHub |
+| GA4 Report | 1 | POST đến GA4 Data API, Property ID 557199346 |
+| Brand Knowledge | 1 | Đọc tài liệu brand knowledge từ GitHub |
+| Skill fetchers | 5 | Content Strategy, Social Content, Copywriting, Analytics Tracking, Campaign Planning |
+| Reference fetchers | 8 | Ba Social Content, hai Copywriting và ba Analytics Tracking References |
+| **Tổng** | **16** | |
 
-Vì vậy, không ghi nhận Product Data Tool là một công cụ đã kết nối chỉ dựa trên việc prompt cũ có nhắc tới nó. Tương tự, cần kiểm tra HTTP Request trước khi kết luận nó đang kết nối tới Brand Knowledge hoặc Product Data.
+GA4 Request Body Builder được mô tả như logic tạo request body cho báo cáo GA4. Thông tin cấu hình không xác định đây là HTTP Request thứ 17; do đó thành phần này không được cộng vào số lượng endpoint.
 
-## 4. Prompt tài liệu hóa
+## 4. Phân biệt các lớp cấu hình
 
-Bản Instructions chuẩn hóa đề xuất được lưu tại:
-- [marketing-ai-agent-instructions-v1.md](./marketing-ai-agent-instructions-v1.md)
+Agent Builder và n8n runtime là hai lớp riêng:
 
-Đây là bản Draft để rà soát và triển khai. Chỉ cập nhật trạng thái thành Active/Production sau khi thay prompt trong Builder, lưu cấu hình và kiểm thử thành công.
+- **Agent Builder:** quản lý danh tính Agent, Instructions, model selector, trigger và các Tools/Skills được khai báo trên giao diện.
+- **HTTP Request tools:** truy xuất các endpoint được cấu hình, bao gồm Product Catalogue, Brand Knowledge, Skills và References.
+- **n8n workflows:** có webhook, node xử lý dữ liệu, prompt builder và Gemini Chat Model riêng theo từng workflow.
 
-## 5. Việc cần xác minh trước khi nghiệm thu
+Việc một Skill có file trong Git không đồng nghĩa Skill được gắn vào khu vực Skills hoặc tự động được nạp vào mọi workflow. Tương tự, model hiển thị ở Builder không xác định model thực tế của từng Gemini Chat Model node trong n8n.
 
-- [ ] Thay Instructions bằng bản đã được duyệt.
-- [ ] Thêm các Skills cần thiết trong khu vực Skills.
-- [ ] Xác minh từng Reference được gắn đúng Skill hoặc Agent.
-- [ ] Kiểm tra cấu hình HTTP Request và Google Analytics.
-- [ ] Kiểm tra Property ID, Metrics, Dimensions và timezone thực tế.
-- [ ] Kiểm thử truy vấn GA4 và một yêu cầu Marketing không cần GA4.
-- [ ] Kiểm tra Agent không tuyên bố đã truy xuất nguồn hoặc gọi công cụ khi chưa thực hiện.
-- [ ] Lưu lại ảnh chụp hoặc bản export cấu hình sau kiểm thử.
+## 5. Giới hạn của bằng chứng cấu hình
 
-## 6. Lưu ý bảo mật
+Ảnh Builder và mô tả Tool cho phép ghi nhận tên hiển thị, nhóm chức năng và endpoint được khai báo. Chúng không tự chứng minh:
 
-Không commit API key, OAuth token, webhook secret, thông tin xác thực, dữ liệu cá nhân hoặc payload có chứa dữ liệu khách hàng vào repository.
+- Request đến endpoint đã thực thi thành công và trả đúng dữ liệu.
+- Response của từng Skill/Reference được truyền vào model context.
+- Google Analytics tool và GA4 workflow sử dụng cùng credential hoặc cùng cấu hình truy vấn.
+- Tùy chọn Require approval đang bật cho từng Tool.
+- Agent Builder gọi trực tiếp workflow AI Assistant hay sử dụng một luồng xử lý khác.
+- Model selector và model node trong n8n đang sử dụng cùng phiên bản.
+
+Các kết luận về vận hành cần dựa trên cấu hình runtime và execution tương ứng, không suy ra chỉ từ giao diện Builder.
