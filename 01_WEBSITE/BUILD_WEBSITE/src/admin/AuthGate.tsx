@@ -115,7 +115,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
     if (!resetToken) {
-      setError('Nhập mã xác nhận quản trị đã lưu trong Vercel.');
+      setError('Nhập mã xác nhận quản trị đã cấu hình trong Netlify.');
       return;
     }
     setBusy(true);
@@ -171,7 +171,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="min-h-screen grid place-items-center bg-[#F6F7F5]">Đang kiểm tra phiên đăng nhập...</div>;
 
   if (!supabaseConfigured || !supabase) {
-    return <div className="min-h-screen grid place-items-center bg-[#F6F7F5] p-6"><div className="max-w-md bg-white rounded-2xl border p-6"><h1 className="font-semibold text-lg">Chưa cấu hình Supabase</h1><p className="text-sm text-gray-600 mt-2">Kiểm tra VITE_SUPABASE_URL và VITE_SUPABASE_PUBLISHABLE_KEY trong Environment Variables của Vercel, sau đó deploy lại.</p></div></div>;
+    return <div className="min-h-screen grid place-items-center bg-[#F6F7F5] p-6"><div className="max-w-md bg-white rounded-2xl border p-6"><h1 className="font-semibold text-lg">Chưa cấu hình Supabase</h1><p className="text-sm text-gray-600 mt-2">Kiểm tra VITE_SUPABASE_URL và VITE_SUPABASE_PUBLISHABLE_KEY trong Environment Variables của Netlify, sau đó deploy lại.</p></div></div>;
   }
 
   if (resetMode) {
