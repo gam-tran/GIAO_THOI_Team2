@@ -150,46 +150,23 @@ Marketing thực tế sau khi người phụ trách xem xét.
 - The export contains both webhook and execute-workflow triggers. The workflow can therefore be invoked through either path, subject to actual n8n configuration.
 - No explicit memory or Skills loader is shown in this export.
 
-## Status
+## Input validation contract
 
-**Source-extracted; validation hardening documented.** The Code node patch below is a recommendation and has not been deployed. Validate the actual input schema, missing fields, channel array handling, budget arithmetic and response quality with real executions.
+The prompt builder calls `request.channels.join(', ')`. The input contract therefore requires `channels` to be a non-empty array of non-empty strings before prompt construction. Required campaign fields should also be validated at the request boundary.
 
+| Field | Validation rule |
+|---|---|
+| `campaignName` | Non-empty string |
+| `product` | Non-empty string |
+| `objective` | Non-empty string |
+| `targetAudience` | Non-empty string |
+| `duration` | Non-empty string |
+| `channels` | Non-empty array; every item is a non-empty string |
+| `budget` | Optional; when supplied, must be a finite non-negative number |
+| `brief` | Optional string |
 
-## Input validation hardening — recommended Code node change
+Invalid requests should return a structured validation response before prompt construction. This prevents malformed input from causing a Code node exception and keeps the model focused on campaign planning rather than repairing the request payload.
 
-The exported prompt builder calls `request.channels.join(', ')` without checking the value. Keep validation in the Code node before prompt interpolation; a prompt instruction cannot prevent a JavaScript exception that occurs before the LLM call.
+## Scope of findings
 
-Recommended validation pattern (adapt the field requirements to the frontend contract before deployment):
-
-```javascript
-const request = $json.body ?? $json;
-const errors = [];
-
-const requiredText = [
-  'campaignName', 'product', 'objective', 'targetAudience', 'duration'
-];
-for (const field of requiredText) {
-  if (typeof request[field] !== 'string' || !request[field].trim()) {
-    errors.push(field);
-  }
-}
-
-if (!Array.isArray(request.channels) || request.channels.length === 0 ||
-    !request.channels.every(channel => typeof channel === 'string' && channel.trim())) {
-  errors.push('channels (must be a non-empty array of non-empty strings)');
-}
-
-if (request.budget !== undefined && request.budget !== null && request.budget !== '') {
-  const budget = Number(request.budget);
-  if (!Number.isFinite(budget) || budget < 0) errors.push('budget (must be a non-negative number)');
-}
-
-if (errors.length) {
-  return [{ json: { success: false, code: 'INVALID_CAMPAIGN_INPUT', message: 'Thiếu hoặc sai dữ liệu: ' + errors.join(', '), errors } }];
-}
-
-const channelsText = request.channels.map(channel => channel.trim()).join(', ');
-// Use channelsText when building the campaign prompt.
-```
-
-**Deployment note:** this is a recommended code patch for the n8n Code node, not a change to the live workflow. Confirm the actual webhook payload shape and downstream response contract, then implement and test in n8n before marking it deployed.
+This document records the prompt template, request mapping and Code node behavior visible in the supplied Campaign Planner export. The model node type is identified, but the exact model/version is not specified in the export.
